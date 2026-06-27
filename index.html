@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAOP - Login</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <link rel="stylesheet" href="css/components.css">
+    <script src="js/theme.js"></script>
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .auth-footer a {
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: absolute; top: 1.5rem; right: 1.5rem; z-index: 100;">
+        <button id="theme-toggle" class="btn btn-outline" style="padding: 0.5rem 1rem; background: var(--bg-card); backdrop-filter: blur(8px);">🌙 Dark</button>
+    </div>
+
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="auth-container container">
+        <div class="glass glass-panel auth-card">
+            <div class="flex-center" style="margin-bottom: 2rem; flex-direction: column;">
+                <div class="logo">IAOP</div>
+                <h2 id="auth-title" style="margin-top: 1rem;">Welcome Back</h2>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="input-group">
+                    <label class="input-label" for="login-email">Email</label>
+                    <input type="email" id="login-email" class="input-field" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" class="input-field" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+                
+                <div style="display: flex; align-items: center; margin: 1.5rem 0;">
+                    <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
+                    <span style="padding: 0 1rem; color: var(--text-muted); font-size: 0.875rem;">OR</span>
+                    <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
+                </div>
+                
+                <button type="button" class="btn btn-outline btn-google" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px;">
+                    Sign in with Google
+                </button>
+
+                <div class="auth-footer">
+                    Don't have an account? <a id="show-signup">Create one</a>
+                </div>
+            </form>
+
+            <!-- Signup Form (Hidden by default) -->
+            <form id="signup-form" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label" for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" class="input-field" placeholder="John Doe" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label" for="signup-email">Email</label>
+                    <input type="email" id="signup-email" class="input-field" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label" for="signup-password">Password</label>
+                    <input type="password" id="signup-password" class="input-field" placeholder="Create a password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+                
+                <div style="display: flex; align-items: center; margin: 1.5rem 0;">
+                    <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
+                    <span style="padding: 0 1rem; color: var(--text-muted); font-size: 0.875rem;">OR</span>
+                    <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
+                </div>
+                
+                <button type="button" class="btn btn-outline btn-google" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px;">
+                    Sign up with Google
+                </button>
+
+                <div class="auth-footer">
+                    Already have an account? <a id="show-login">Sign in</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('show-signup').addEventListener('click', toggleAuthMode);
+        document.getElementById('show-login').addEventListener('click', toggleAuthMode);
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('signup-form').addEventListener('submit', handleSignup);
+        document.querySelectorAll('.btn-google').forEach(btn => {
+            btn.addEventListener('click', handleGoogleLogin);
+        });
+    </script>
+</body>
+</html>

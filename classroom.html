@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAOP - Classroom</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <link rel="stylesheet" href="css/components.css">
+    <script src="js/theme.js"></script>
+    <style>
+        .class-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: 2rem 0;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .class-title {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+        .class-meta {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+        }
+        .main-content {
+            flex-grow: 1;
+        }
+        .layout-flex {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        @media (max-width: 768px) {
+            .layout-flex {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+        .notice-card {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary);
+        }
+        .notice-card h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        .notice-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            text-align: right;
+        }
+        .member-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .member-item:last-child {
+            border-bottom: none;
+        }
+        /* Role specifics */
+        #teacher-controls { display: none; }
+    </style>
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <nav class="navbar glass">
+        <div class="logo">IAOP <span>Classroom</span></div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button id="theme-toggle" class="btn btn-outline" style="padding: 0.5rem 1rem; border: none; font-size: 1.2rem;">🌙</button>
+            <a href="dashboard.html" class="btn btn-outline" style="padding: 0.5rem 1rem;">Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="class-header">
+            <div>
+                <h1 class="class-title" id="class-name">Loading...</h1>
+                <div class="class-meta">Subject: <span id="class-subject">...</span> | Code: <span id="class-code">...</span></div>
+            </div>
+            <div>
+                <span class="class-role-badge" id="user-role" style="background: rgba(59, 130, 246, 0.2); color: var(--primary); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 800;">Role: ...</span>
+            </div>
+        </div>
+
+        <div class="layout-flex">
+            <!-- Sidebar: Actions and Members -->
+            <aside class="sidebar">
+                <div id="teacher-controls" class="glass glass-panel" style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Teacher Actions</h3>
+                    <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;" id="btn-post-notice">Post Notice</button>
+                    <button class="btn btn-outline" style="width: 100%;" id="btn-take-attendance">Take Attendance</button>
+                </div>
+
+                <div class="glass glass-panel">
+                    <h3 style="margin-bottom: 1rem;">Members</h3>
+                    <div id="members-list">
+                        <div class="member-item" style="color: var(--text-muted);">Loading...</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content: Notices -->
+            <section class="main-content">
+                <h3 style="margin-bottom: 1.5rem;">Announcements</h3>
+                <div id="notices-list">
+                    <div class="glass notice-card" style="border-left-color: var(--text-muted);">
+                        <p style="color: var(--text-muted); text-align: center;">Loading notices...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal for Post Notice -->
+    <div id="modal-post-notice" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Post an Announcement</h3>
+            <form id="form-post-notice">
+                <div class="input-group">
+                    <label class="input-label">Title</label>
+                    <input type="text" id="notice-title" class="input-field" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Message</label>
+                    <textarea id="notice-message" class="input-field" rows="4" style="resize: vertical;" required></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Attendance -->
+    <div id="modal-attendance" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Take Attendance</h3>
+            <form id="form-take-attendance">
+                <div id="attendance-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+                    <div style="color: var(--text-muted);">Loading students...</div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/classroom.js"></script>
+</body>
+</html>
