@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAOP - Dashboard</title>
+    <link rel="stylesheet" href="css/globals.css?v=2">
+    <link rel="stylesheet" href="css/components.css?v=2">
+    <script src="js/theme.js?v=2"></script>
+    <style>
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem 0;
+        }
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .class-card {
+            cursor: pointer;
+        }
+        .class-role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--primary);
+        }
+        .class-role-badge.owner { background: rgba(139, 92, 246, 0.2); color: var(--accent); }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; font-weight: 600; font-size: 1.25rem;">
+            <i data-lucide="book-open" style="color: var(--primary);"></i>
+            <span>IAOP Web</span>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button class="btn btn-outline" id="btn-join-class" style="border: none;" title="Join Class"><i data-lucide="user-plus"></i></button>
+            <button class="btn btn-outline" id="btn-create-class" style="border: none;" title="Create Class"><i data-lucide="plus"></i></button>
+            
+            <!-- User Profile Dropdown -->
+            <div style="position: relative; margin-left: 1rem;">
+                <div id="btn-profile-menu" style="background: rgba(0, 168, 132, 0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <i data-lucide="user" style="color: var(--primary);"></i>
+                </div>
+                <div id="profile-dropdown" style="position: absolute; right: 0; top: calc(100% + 0.5rem); display: none; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md); min-width: 200px; z-index: 50; overflow: hidden;">
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); background: var(--bg-main);">
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);" id="user-name">Loading...</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);" id="user-email"></div>
+                    </div>
+                    <button class="btn btn-outline" id="theme-toggle" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; padding: 0.75rem 1rem;"><i data-lucide="moon"></i> Toggle Theme</button>
+                    <button class="btn btn-outline" id="btn-logout-trigger" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: #ef4444; padding: 0.75rem 1rem;"><i data-lucide="log-out"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+        <h2 style="margin-bottom: 2rem; color: var(--text-main);">Your Classes</h2>
+        <div id="class-list" class="class-grid">
+            <div style="color: var(--text-muted); grid-column: 1 / -1; text-align: center; padding: 3rem;">Loading classes...</div>
+        </div>
+    </main>
+    <!-- Modal for Create Class -->
+    <div id="modal-create-class" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Create a New Class</h3>
+            <form id="form-create-class">
+                <div class="input-group">
+                    <label class="input-label">Class Name</label>
+                    <input type="text" id="create-class-name" class="input-field" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Subject/Course</label>
+                    <input type="text" id="create-class-subject" class="input-field" required>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Join Class -->
+    <div id="modal-join-class" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Join a Class</h3>
+            <form id="form-join-class">
+                <div class="input-group">
+                    <label class="input-label">Class Code (6-digit)</label>
+                    <input type="text" id="join-class-code" class="input-field" maxlength="6" style="text-transform: uppercase;" required>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Join</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Logout Confirm -->
+    <div id="modal-logout-confirm" class="modal-overlay">
+        <div class="modal-content card" style="max-width: 400px; text-align: center; padding: 2rem;">
+            <div style="margin-bottom: 1.5rem;">
+                <i data-lucide="log-out" style="width: 48px; height: 48px; color: #ef4444; margin: 0 auto;"></i>
+            </div>
+            <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">Are you sure you want to log out?</h3>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">You will need to sign in again to access your classes.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-logout" style="flex: 1; background: #ef4444; color: white; border: none;">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <script src="js/firebase-config.js?v=2"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/dashboard.js?v=2"></script>
+    
+    <!-- Script Logic -->
+    <script>
+        // No manual sidebar overlay needed, WhatsApp Web style handles responsiveness differently.
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

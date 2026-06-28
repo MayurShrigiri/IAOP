@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom | IAOP</title>
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            var err = document.createElement("div");
+            err.style.cssText = "position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;font-size:20px;";
+            err.innerText = "JS Error: " + msg + " at line " + lineNo + " col " + columnNo;
+            if(document.body) document.body.appendChild(err);
+            else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(err));
+            return false;
+        };
+        window.addEventListener("unhandledrejection", function(e) {
+            var err = document.createElement("div");
+            err.style.cssText = "position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;font-size:20px;";
+            err.innerText = "Promise Rejection: " + (e.reason ? e.reason.message || e.reason : "unknown");
+            if(document.body) document.body.appendChild(err);
+            else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(err));
+        });
+    </script>
+    <link rel="stylesheet" href="css/globals.css?v=2">
+    <link rel="stylesheet" href="css/components.css?v=2">
+    <script src="js/theme.js?v=2"></script>
+    <style>
+        .class-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: 2rem 0;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .class-title {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+        .class-meta {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+        }
+        .main-content {
+            flex-grow: 1;
+        }
+        .layout-flex {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        @media (max-width: 768px) {
+            .layout-flex {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+        .notice-card {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary);
+        }
+        .notice-card h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        .notice-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            text-align: right;
+        }
+        .member-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .member-item:last-child {
+            border-bottom: none;
+        }
+        /* Role specifics */
+        #teacher-controls { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; position: sticky; top: 0; z-index: 50;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="btn btn-outline" onclick="window.location.href='dashboard.html'" style="padding: 0.5rem; border: none;" title="Back to Dashboard">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div style="background: rgba(0, 168, 132, 0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="users" style="color: var(--primary);"></i>
+            </div>
+            <div>
+                <h1 style="font-size: 1.1rem; font-weight: 600; margin: 0; line-height: 1.2; color: var(--text-main);" id="class-name">Loading...</h1>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Sub: <span id="class-subject">...</span> | Code: <span id="class-code">...</span></div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span id="user-role" style="font-size: 0.85rem; font-weight: 600; color: var(--primary);">Role: ...</span>
+            
+            <button class="btn btn-outline" style="border: none;" title="Class Members" onclick="openModal('modal-people')">
+                <i data-lucide="users"></i>
+            </button>
+            
+            <!-- Class Settings Dropdown -->
+            <div style="position: relative;">
+                <button id="btn-class-settings" class="btn btn-outline" style="padding: 0.5rem; border: none;"><i data-lucide="more-vertical"></i></button>
+                <div id="class-settings-dropdown" style="position: absolute; right: 0; top: calc(100% + 0.5rem); display: none; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md); min-width: 200px; z-index: 50; overflow: hidden;">
+                    <button class="btn btn-outline" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: var(--text-main); padding: 0.75rem 1rem; display: none;" id="btn-change-wallpaper"><i data-lucide="image"></i> Change Cover</button>
+                    <button class="btn btn-outline" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: #ef4444; padding: 0.75rem 1rem; display: none;" id="btn-leave-class"><i data-lucide="log-out"></i> Leave Class</button>
+                    <button class="btn btn-outline" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: #ef4444; padding: 0.75rem 1rem; display: none;" id="btn-delete-class"><i data-lucide="trash-2"></i> Delete Class</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Classroom Wallpaper Banner (Hidden if no wallpaper) -->
+    <div id="classroom-banner" style="display: none; width: 100%; height: 200px; background-color: var(--primary); background-size: cover; background-position: center; position: relative;">
+        <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);"></div>
+        <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
+    </div>
+
+    <!-- Main Stream Content -->
+    <main style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+        
+        <!-- Teacher Action Area -->
+        <div id="teacher-stream-controls" style="display: none; margin-bottom: 2rem;">
+            <div class="card" style="padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm);">
+                <button class="btn btn-outline" id="btn-post-notice" style="flex: 1; min-width: 150px; justify-content: center;"><i data-lucide="edit-3"></i> Post Announcement</button>
+                <button class="btn btn-outline" id="btn-create-assignment" style="flex: 1; min-width: 150px; justify-content: center; color: var(--accent); border-color: rgba(139, 92, 246, 0.3);"><i data-lucide="file-text"></i> Assignment</button>
+                <button class="btn btn-outline" onclick="openModal('modal-take-attendance')" style="flex: 1; min-width: 150px; justify-content: center; color: #10b981; border-color: rgba(16, 185, 129, 0.3);"><i data-lucide="check-square"></i> Attendance</button>
+                <button class="btn btn-outline" id="btn-start-live" style="flex: 1; min-width: 150px; justify-content: center; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);"><i data-lucide="video"></i> Live Class</button>
+                <button class="btn btn-outline" id="btn-end-live" style="flex: 1; min-width: 150px; justify-content: center; color: #ef4444; display: none;"><i data-lucide="square"></i> End Live Class</button>
+            </div>
+        </div>
+
+        <!-- Live Lecture Room (Embedded in Stream when active) -->
+        <div id="active-live-container" class="card" style="display: none; padding: 2rem; border: 2px solid #ef4444; text-align: center; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+                <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%; animation: pulse 2s infinite;"></div>
+                <h3 style="margin: 0; font-size: 1.5rem; color: #ef4444;">Live Class in Progress</h3>
+            </div>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Join now to participate in the live session.</p>
+            <button class="btn btn-primary" style="background: #ef4444; padding: 0.75rem 2rem; font-size: 1.1rem;" id="btn-join-live"><i data-lucide="play"></i> Join Live Class</button>
+            <div id="jitsi-container" style="width: 100%; height: 500px; border-radius: 8px; overflow: hidden; display: none; margin-top: 2rem;"></div>
+        </div>
+
+        <!-- Student Attendance Summary Card -->
+        <div id="student-attendance-summary" class="card" style="display: none; margin-bottom: 2rem; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #10b981;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 50%;">
+                    <i data-lucide="pie-chart" style="color: #10b981; width: 24px; height: 24px;"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 0.25rem 0;">My Attendance</h4>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">Present: <span id="student-att-present" style="font-weight: 600; color: #10b981;">--</span> | Absent: <span id="student-att-absent" style="font-weight: 600; color: #ef4444;">--</span></div>
+                </div>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: #10b981;" id="student-att-percentage">--%</div>
+        </div>
+
+        <!-- The Universal Stream -->
+        <div id="notices-list">
+            <div style="text-align: center; color: var(--text-muted); padding: 3rem;">Loading stream...</div>
+        </div>
+    </main>
+
+    <!-- Modal for People -->
+    <div id="modal-people" class="modal-overlay">
+        <div class="modal-content glass glass-panel" style="max-width: 600px;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Class Members</h3>
+                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+            </div>
+            <div id="members-list" style="max-height: 400px; overflow-y: auto;">
+                <div class="member-item" style="color: var(--text-muted);">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Take Attendance -->
+    <div id="modal-take-attendance" class="modal-overlay">
+        <div class="modal-content glass glass-panel" style="max-width: 600px;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Take Attendance</h3>
+                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+            </div>
+            <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+                <button class="btn btn-outline" style="border-color: var(--accent); color: var(--accent); padding: 0.5rem 1rem;" id="btn-open-report-modal">📥 Download PDF Report</button>
+            </div>
+            <form id="form-take-attendance">
+                <div class="grid-2" style="margin-bottom: 1.5rem; gap: 1rem;">
+                    <div class="input-group" style="margin: 0;">
+                        <label class="input-label">Date</label>
+                        <input type="date" id="attendance-date" class="input-field" required>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: center;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 600; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; justify-content: center;">
+                            <input type="checkbox" id="attendance-holiday" style="width: 1.25rem; height: 1.25rem;">
+                            Mark as Holiday
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="attendance-list-container">
+                    <div style="display: flex; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
+                        <span style="font-weight: 600;">Student Name</span>
+                        <span style="font-weight: 600;">Present?</span>
+                    </div>
+                    <div id="attendance-list" style="max-height: 400px; overflow-y: auto; margin-bottom: 1rem;">
+                        <div style="color: var(--text-muted);">Loading students...</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-attendance">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Edit Notice -->
+    <div id="modal-edit-notice" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Edit Announcement</h3>
+            <form id="form-edit-notice">
+                <input type="hidden" id="edit-notice-id">
+                <div class="input-group">
+                    <label class="input-label">Title</label>
+                    <input type="text" id="edit-notice-title" class="input-field" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Message</label>
+                    <textarea id="edit-notice-message" class="input-field" rows="4" required></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <input type="file" id="edit-notice-file-upload" style="display: none;">
+                    <input type="file" id="edit-notice-camera-upload" accept="image/*" capture="environment" style="display: none;">
+                    <input type="file" id="edit-notice-image-upload" accept="image/*" style="display: none;">
+
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('edit-notice-camera-upload').click()" title="Camera"><i data-lucide="camera"></i></button>
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('edit-notice-image-upload').click()" title="Photo/Gallery"><i data-lucide="image"></i></button>
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('edit-notice-file-upload').click()" title="Document"><i data-lucide="file-text" style="width: 20px; height: 20px;"></i></button>
+                </div>
+                
+                <div id="edit-notice-attachment-preview" style="display: none; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
+                    <span id="edit-notice-attachment-name" style="font-size: 0.875rem; color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;">filename.jpg</span>
+                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="removeEditNoticeAttachment()"><i data-lucide="x"></i></button>
+                </div>
+                <input type="hidden" id="edit-notice-attachment-removed" value="false">
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-edit-notice">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Post Notice -->
+    <div id="modal-post-notice" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Post Announcement</h3>
+            <form id="form-post-notice">
+                <div class="input-group">
+                    <label class="input-label">Title</label>
+                    <input type="text" id="notice-title" class="input-field" placeholder="e.g., Assignment Due" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Message</label>
+                    <textarea id="notice-message" class="input-field" rows="4" placeholder="Write your announcement here..." required></textarea>
+                </div>
+                
+                <!-- WhatsApp style attachment buttons -->
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <!-- Hidden file inputs -->
+                    <input type="file" id="notice-file-upload" style="display: none;">
+                    <input type="file" id="notice-camera-upload" accept="image/*" capture="environment" style="display: none;">
+                    <input type="file" id="notice-image-upload" accept="image/*" style="display: none;">
+
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('notice-camera-upload').click()" title="Camera"><i data-lucide="camera"></i></button>
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('notice-image-upload').click()" title="Photo/Gallery"><i data-lucide="image"></i></button>
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('notice-file-upload').click()" title="Document"><i data-lucide="file-text" style="width: 20px; height: 20px;"></i></button>
+                </div>
+                
+                <!-- Preview Area -->
+                <div id="notice-attachment-preview" style="display: none; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
+                    <span id="notice-attachment-name" style="font-size: 0.875rem; color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;">filename.jpg</span>
+                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="removeNoticeAttachment()"><i data-lucide="x"></i></button>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-notice">Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Create Assignment -->
+    <div id="modal-create-assignment" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Create Assignment</h3>
+            <form id="form-create-assignment">
+                <div class="input-group">
+                    <label class="input-label">Title</label>
+                    <input type="text" id="assignment-title" class="input-field" placeholder="e.g., Chapter 4 Essay" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Instructions (Optional)</label>
+                    <textarea id="assignment-instructions" class="input-field" rows="3" placeholder="Provide instructions..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Due Date</label>
+                    <input type="date" id="assignment-due-date" class="input-field" required>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <input type="file" id="assignment-file-upload" style="display: none;">
+                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('assignment-file-upload').click()" title="Attachment"><i data-lucide="paperclip"></i></button>
+                </div>
+                
+                <div id="assignment-attachment-preview" style="display: none; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
+                    <span id="assignment-attachment-name" style="font-size: 0.875rem; color: var(--text-main); font-weight: 500;">filename.pdf</span>
+                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="removeAssignmentAttachment()"><i data-lucide="x"></i></button>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-assignment">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for View Submissions (Teacher Checklist) -->
+    <div id="modal-view-submissions" class="modal-overlay">
+        <div class="modal-content glass glass-panel" style="max-width: 600px;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;" id="view-submissions-title">Submissions</h3>
+                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="form-view-submissions">
+                <input type="hidden" id="checklist-assignment-id">
+                <div style="display: flex; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
+                    <span style="font-weight: 600;">Student Name</span>
+                    <span style="font-weight: 600;">Completed?</span>
+                </div>
+                <div id="submissions-list" style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
+                    <div style="color: var(--text-muted);">Loading students...</div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-checklist">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Download Report -->
+    <div id="modal-download-report" class="modal-overlay">
+        <div class="modal-content glass glass-panel">
+            <h3 style="margin-bottom: 1.5rem;">Download Class Report</h3>
+            <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.875rem;">Select what data to include in the PDF report for this class.</p>
+            
+            <form id="form-download-report">
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" id="report-include-attendance" checked style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);">
+                        <span style="font-weight: 500;">Include Attendance Records</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" id="report-include-assignments" checked style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);">
+                        <span style="font-weight: 500;">Include Assignment Submissions</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-generate-pdf">Generate PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Compat SDKs -->
+    <!-- Transfer Ownership Modal -->
+    <div class="modal-overlay" id="modal-transfer-ownership">
+        <div class="modal glass">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2 style="color: #ef4444; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    Transfer Ownership
+                </h2>
+                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+            </div>
+            <p style="margin-bottom: 1.5rem; line-height: 1.5;">
+                You are about to permanently transfer ownership of this class to <strong id="transfer-target-name"></strong>. 
+                You will lose your Owner privileges and teacher controls immediately.
+            </p>
+            <form id="form-transfer-ownership">
+                <div class="input-group">
+                    <label class="input-label" for="transfer-my-new-role">Choose your new role:</label>
+                    <select id="transfer-my-new-role" class="input-field" required>
+                        <option value="Teacher">Teacher (Keep some controls)</option>
+                        <option value="Student">Student (Lose all controls)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; background: #ef4444;">Transfer Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leave Class Modal -->
+    <div class="modal-overlay" id="modal-leave-class">
+        <div class="modal glass">
+            <h3 style="margin-bottom: 1.5rem; color: #ef4444;">Leave Class</h3>
+            <p style="margin-bottom: 1.5rem; line-height: 1.5;">
+                Are you sure you want to leave this class? You will no longer have access to announcements or attendance records.
+            </p>
+            <form id="form-leave-class">
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; background: #ef4444;">Leave Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Class Modal -->
+    <div class="modal-overlay" id="modal-delete-class">
+        <div class="modal glass">
+            <h3 style="margin-bottom: 1.5rem; color: #ef4444;">Permanently Delete Class</h3>
+            <p style="margin-bottom: 1.5rem; line-height: 1.5;">
+                This action is irreversible. The class, all members, and all records will be permanently deleted for everyone.
+            </p>
+            <form id="form-delete-class">
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; background: #ef4444;">Delete Permanently</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Jitsi Meet API -->
+    <script src="https://meet.jit.si/external_api.js"></script>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <script src="js/firebase-config.js?v=2"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/classroom.js?v=2"></script>
+    
+    <!-- Sidebar Logic -->
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const openBtn = document.getElementById('btn-open-sidebar');
+        const closeBtn = document.getElementById('btn-close-sidebar');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('active');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        }
+
+        openBtn?.addEventListener('click', openSidebar);
+        closeBtn?.addEventListener('click', closeSidebar);
+        sidebarOverlay?.addEventListener('click', closeSidebar);
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

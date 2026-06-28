@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* Base Colors - WhatsApp Web Inspired Light Theme */
+    --bg-main: #f0f2f5; 
+    --bg-card: #ffffff; 
+    --bg-input: #ffffff;
+    --bg-input-focus: #ffffff;
+    --bg-modal: rgba(11, 20, 26, 0.4);
+    --bg-hover: #f5f6f6;
+    --bg-active: #f0f2f5;
+    
+    --primary: #00a884;
+    --primary-hover: #008f6f;
+    --accent: #00a884;
+    
+    --text-main: #111b21; 
+    --text-muted: #667781; 
+    --border-color: #d1d7db;
+    --border-hover: #8696a0;
+    
+    /* Typography */
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(11, 20, 26, 0.05);
+    --shadow-md: 0 2px 5px rgba(11, 20, 26, 0.1);
+    --shadow-dropdown: 0 2px 5px 0 rgba(11, 20, 26, .26), 0 2px 10px 0 rgba(11, 20, 26, .16);
+}
+
+html[data-theme="dark"] {
+    --bg-main: #111b21; 
+    --bg-card: #202c33; 
+    --bg-input: #2a3942;
+    --bg-input-focus: #2a3942;
+    --bg-modal: rgba(11, 20, 26, 0.8);
+    --bg-hover: #202c33;
+    --bg-active: #2a3942;
+
+    --primary: #00a884;
+    --primary-hover: #008f6f;
+
+    --text-main: #e9edef; 
+    --text-muted: #8696a0; 
+    --border-color: #2a3942;
+    --border-hover: #3b4a54;
+    
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 5px rgba(0, 0, 0, 0.4);
+    --shadow-dropdown: 0 2px 5px 0 rgba(0, 0, 0, .4), 0 2px 10px 0 rgba(0, 0, 0, .3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Hide blobs if any */
+.bg-blobs {
+    display: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Base scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(17, 27, 33, 0.2);
+    border-radius: 3px;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
