@@ -47,6 +47,10 @@ window.auth.onAuthStateChanged(async (user) => {
     const fab = document.getElementById('teacher-fab');
     if (fab) fab.style.display = isStaff ? 'flex' : 'none';
 
+    // Teacher assignment section
+    const teacherAssign = document.getElementById('teacher-assignments-actions');
+    if (teacherAssign) teacherAssign.style.display = isStaff ? 'block' : 'none';
+
     // Teacher attendance section
     const teacherAtt = document.getElementById('teacher-att-section');
     if (teacherAtt) teacherAtt.style.display = isStaff ? 'block' : 'none';
@@ -346,6 +350,9 @@ function renderUnifiedStream() {
                                 <div class="feed-author-time">${date}</div>
                             </div>
                             <span class="due-label ${overdue?'overdue':''}" style="margin-left:auto">Due: ${dueDate}</span>
+                            <button class="btn btn-ghost btn-icon-sm" style="color:var(--danger);margin-left:8px;" onclick="event.stopPropagation(); deleteAssignment('${item.id}')" title="Delete Assignment">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 5v6m4-6v6"/></svg>
+                            </button>
                         </div>
                         <div class="feed-card-title">${d.title}</div>
                         <div class="feed-card-body">${d.instructions||''}</div>
@@ -501,6 +508,9 @@ function renderAssignmentsOnly() {
                             <div class="feed-author-time">${date}</div>
                         </div>
                         <span class="due-label ${overdue?'overdue':''}" style="margin-left:auto">Due: ${dueDate}</span>
+                        <button class="btn btn-ghost btn-icon-sm" style="color:var(--danger);margin-left:8px;" onclick="event.stopPropagation(); deleteAssignment('${item.id}')" title="Delete Assignment">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 5v6m4-6v6"/></svg>
+                        </button>
                     </div>
                     <div class="feed-card-title">${d.title}</div>
                     <div class="feed-card-body">${d.instructions||''}</div>
@@ -880,6 +890,14 @@ window.deleteNotice = async function(id) {
             title:'', message:'', attachmentUrl:null, attachmentType:null, attachmentName:null
         });
         showToast('Announcement deleted.');
+    } catch(e) { showToast(e.message,'error'); }
+};
+
+window.deleteAssignment = async function(id) {
+    if (!confirm('Are you sure you want to delete this assignment?')) return;
+    try {
+        await window.db.doc(`classes/${classId}/assignments/${id}`).delete();
+        showToast('Assignment deleted.');
     } catch(e) { showToast(e.message,'error'); }
 };
 
