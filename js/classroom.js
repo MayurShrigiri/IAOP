@@ -37,9 +37,9 @@ window.auth.onAuthStateChanged(async (user) => {
 
     const isStaff = ['Owner', 'Teacher', 'CR'].includes(userRole);
 
-    // Teacher controls bar
-    const ctrl = document.getElementById('teacher-stream-controls');
-    if (ctrl) ctrl.style.display = isStaff ? 'flex' : 'none';
+    // Teacher FAB
+    const fab = document.getElementById('teacher-fab');
+    if (fab) fab.style.display = isStaff ? 'flex' : 'none';
 
     // Teacher attendance section
     const teacherAtt = document.getElementById('teacher-att-section');
@@ -99,6 +99,25 @@ document.getElementById('btn-logout-trigger')?.addEventListener('click', () => {
 });
 document.getElementById('btn-confirm-logout')?.addEventListener('click', () => {
     window.auth.signOut();
+});
+
+/* ── FAB Toggle Logic ─── */
+document.getElementById('btn-toggle-fab')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const menu = document.getElementById('teacher-fab-menu');
+    if (btn && menu) {
+        btn.classList.toggle('open');
+        menu.classList.toggle('open');
+    }
+    e.stopPropagation();
+});
+document.addEventListener('click', (e) => {
+    const fabMenu = document.getElementById('teacher-fab-menu');
+    const fabBtn = document.getElementById('btn-toggle-fab');
+    if (fabMenu && fabMenu.classList.contains('open') && !e.target.closest('.fab-container')) {
+        fabMenu.classList.remove('open');
+        if (fabBtn) fabBtn.classList.remove('open');
+    }
 });
 
 /* ── Role display ─── */

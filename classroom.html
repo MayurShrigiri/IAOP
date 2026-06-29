@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classroom — IAOP</title>
     <meta name="description" content="IAOP Classroom — View stream, attendance, and class members.">
-    <link rel="stylesheet" href="css/globals.css?v=9">
-    <link rel="stylesheet" href="css/components.css?v=9">
-    <script src="js/theme.js?v=9"></script>
+    <link rel="stylesheet" href="css/globals.css?v=10">
+    <link rel="stylesheet" href="css/components.css?v=10">
+    <script src="js/theme.js?v=10"></script>
     <style>
         .classroom-page{min-height:100vh;background:var(--bg-body)}
 
@@ -141,29 +141,7 @@
         <!-- ── STREAM TAB ─── -->
         <div id="tab-stream" class="tab-content active">
 
-            <!-- Teacher Controls -->
-            <div id="teacher-stream-controls" class="controls-bar">
-                <button class="ctrl-btn" id="btn-post-notice">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    Announcement
-                </button>
-                <button class="ctrl-btn blue" id="btn-create-assignment">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    Assignment
-                </button>
-                <button class="ctrl-btn green" onclick="openModal('modal-take-attendance')">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Attendance
-                </button>
-                <button class="ctrl-btn red" id="btn-start-live">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                    Start Live
-                </button>
-                <button class="ctrl-btn red" id="btn-end-live" style="display:none">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                    End Live
-                </button>
-            </div>
+
 
             <!-- Live Class Active -->
             <div id="active-live-container">
@@ -614,6 +592,35 @@
         </div>
     </div>
 
+    <!-- Teacher FAB -->
+    <div id="teacher-fab" class="fab-container" style="display:none">
+        <div class="fab-menu" id="teacher-fab-menu">
+            <button class="fab-item" id="btn-post-notice">
+                <span class="fab-label">Announcement</span>
+                <div class="fab-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+            </button>
+            <button class="fab-item" id="btn-create-assignment">
+                <span class="fab-label">Assignment</span>
+                <div class="fab-icon" style="color:var(--accent);border-color:var(--accent)"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+            </button>
+            <button class="fab-item" onclick="openModal('modal-take-attendance')">
+                <span class="fab-label">Attendance</span>
+                <div class="fab-icon" style="color:var(--primary);border-color:var(--primary)"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            </button>
+            <button class="fab-item" id="btn-start-live">
+                <span class="fab-label">Start Live</span>
+                <div class="fab-icon" style="color:var(--danger);border-color:var(--danger)"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+            </button>
+            <button class="fab-item" id="btn-end-live" style="display:none">
+                <span class="fab-label">End Live</span>
+                <div class="fab-icon" style="color:var(--danger);border-color:var(--danger)"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+            </button>
+        </div>
+        <button class="fab-main-btn" id="btn-toggle-fab">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="transition:transform var(--dur-base) var(--ease-spring)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        </button>
+    </div>
+
     <!-- Modal: Logout Confirm -->
     <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal modal-sm">
@@ -643,9 +650,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-    <script src="js/firebase-config.js?v=9"></script>
-    <script src="js/auth.js?v=9"></script>
-    <script src="js/classroom.js?v=9"></script>
+    <script src="js/firebase-config.js?v=10"></script>
+    <script src="js/auth.js?v=10"></script>
+    <script src="js/classroom.js?v=10"></script>
     <script>
         // Tab switching — syncs both desktop tabs and mobile bottom nav
         function switchTab(tabId, desktopBtn, mobileId) {
