@@ -37,8 +37,8 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
 
-document.getElementById('btn-create-class').addEventListener('click', () => openModal('modal-create-class'));
-document.getElementById('btn-join-class').addEventListener('click', () => openModal('modal-join-class'));
+document.getElementById('qa-create')?.addEventListener('click', () => openModal('modal-create-class'));
+document.getElementById('qa-join')?.addEventListener('click', () => openModal('modal-join-class'));
 
 document.querySelectorAll('.close-modal').forEach(btn => {
     btn.addEventListener('click', (e) => {
