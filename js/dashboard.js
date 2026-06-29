@@ -5,9 +5,20 @@ window.auth.onAuthStateChanged((user) => {
         window.location.href = 'index.html';
     } else {
         currentUser = user;
-        document.getElementById('user-name').innerText = user.displayName || user.email;
+        const displayName = user.displayName || user.email;
+        const firstName = displayName ? displayName.split(' ')[0] : '';
+        document.getElementById('user-name').innerText = displayName;
         const emailEl = document.getElementById('user-email');
         if (emailEl) emailEl.innerText = user.email;
+
+        // Set avatar initial
+        const avatarEl = document.getElementById('btn-profile-menu');
+        if (avatarEl) avatarEl.textContent = (firstName[0] || '?').toUpperCase();
+
+        // Set greeting
+        const greetEl = document.getElementById('greeting-name');
+        if (greetEl && firstName) greetEl.textContent = '';
+
         loadClasses();
         syncUserNames();
     }
@@ -139,11 +150,20 @@ async function loadClasses() {
         }
 
         if (html === '') {
-            listEl.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">You haven\'t joined any classes yet.</div>';
+            listEl.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">🏫</div>
+                <h3>No classes yet</h3>
+                <p>Join an existing class with a code, or create your own!</p>
+            </div>`;
         } else {
             listEl.innerHTML = html;
+            // Stagger animation
+            listEl.querySelectorAll('.class-card').forEach((card, i) => {
+                card.style.animationDelay = (i * 0.06) + 's';
+            });
         }
-        if (window.lucide) window.lucide.createIcons();
+        const countText = document.getElementById('class-count-text');
+        if (countText) countText.textContent = html ? `You are enrolled in ${listEl.querySelectorAll('.class-card').length} class(es)` : 'No classes found';
     } catch (error) {
         console.error(error);
         listEl.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ef4444;">Error loading classes: ${error.message}</div>`;
@@ -151,23 +171,24 @@ async function loadClasses() {
 }
 
 function renderClassCard(id, data, role) {
-    const isOwner = role === 'Owner';
-    const roleColor = isOwner ? 'color: var(--accent); font-weight: 600;' : 'color: var(--primary); font-weight: 600;';
+    const roleClass = role === 'Owner' ? 'role-owner' : role === 'Teacher' ? 'role-teacher' : role === 'CR' ? 'role-cr' : 'role-student';
+    const displayRole = role === 'Owner' ? 'Teacher' : role === 'CR' ? 'Class Rep' : role;
+    const badgeClass = role === 'Owner' ? 'badge-secondary' : role === 'CR' ? 'badge-warning' : role === 'Teacher' ? 'badge-accent' : 'badge-success';
+    const subjectInitial = (data.subject || data.name || '?')[0].toUpperCase();
+    const cardEmojis = { 'Owner': '🏫', 'Teacher': '👨‍🏫', 'CR': '⭐', 'Student': '🎒' };
+    const icon = cardEmojis[role] || '📚';
     return `
-        <div class="card" onclick="window.location.href='classroom.html?id=${id}&role=${role}'" style="cursor: pointer; transition: transform 0.2s; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: ${isOwner ? 'var(--accent)' : 'var(--primary)'};"></div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h3 style="margin-bottom: 0.25rem; color: var(--text-main); font-size: 1.25rem;">${data.name}</h3>
-                    <div style="color: var(--text-muted); font-size: 0.9rem;">${data.subject}</div>
-                </div>
-                <div style="background: rgba(0, 168, 132, 0.1); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i data-lucide="book-open" style="color: var(--primary); width: 24px; height: 24px;"></i>
-                </div>
+        <div class="class-card ${roleClass}" onclick="window.location.href='classroom.html?id=${id}&role=${role}'">
+            <div class="class-card-header">
+                <div class="class-card-icon">${icon}</div>
             </div>
-            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                <span style="font-size: 0.85rem; color: var(--text-muted);">Role</span>
-                <span style="font-size: 0.85rem; ${roleColor}">${role}</span>
+            <div class="class-card-body">
+                <div class="class-card-name">${data.name}</div>
+                <div class="class-card-subject">${data.subject || 'No subject'}</div>
+                <div class="class-card-footer">
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Code: <strong style="color: var(--text-sub); letter-spacing: 0.05em;">${data.code || '------'}</strong></span>
+                    <span class="badge ${badgeClass}">${displayRole}</span>
+                </div>
             </div>
         </div>
     `;
@@ -179,14 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnProfileMenu) {
         btnProfileMenu.addEventListener('click', (e) => {
             const dropdown = document.getElementById('profile-dropdown');
-            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+            dropdown.classList.toggle('active');
             e.stopPropagation();
         });
     }
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('profile-dropdown');
-        if (dropdown) dropdown.style.display = 'none';
+        if (dropdown && !e.target.closest('.dropdown')) dropdown.classList.remove('active');
     });
 });
 

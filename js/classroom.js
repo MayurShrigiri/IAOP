@@ -13,12 +13,19 @@ window.auth.onAuthStateChanged(async (user) => {
         window.location.href = 'index.html';
     } else {
         currentUser = user;
-        document.getElementById('user-role').innerText = `Role: ${getDisplayRole(userRole)}`;
-        
+
+        // Display role in nav badge
+        const roleEl = document.getElementById('user-role');
+        if (roleEl) roleEl.textContent = getDisplayRole(userRole);
+
         // Configure role-based UI
         if (['Owner', 'Teacher', 'CR'].includes(userRole)) {
-            document.getElementById('teacher-stream-controls').style.display = 'block';
-            
+            document.getElementById('teacher-stream-controls').style.display = 'flex';
+
+            // Show teacher attendance section
+            const teacherAttSection = document.getElementById('teacher-att-section');
+            if (teacherAttSection) teacherAttSection.style.display = 'block';
+
             // Auto-load attendance list for today (for modal)
             const dateInput = document.getElementById('attendance-date');
             if (dateInput && !dateInput.value) {
@@ -26,26 +33,22 @@ window.auth.onAuthStateChanged(async (user) => {
                 setTimeout(() => loadAttendanceForDate(dateInput.value), 500);
             }
         } else if (userRole === 'Student') {
+            // Show student attendance summary
+            const summaryEl = document.getElementById('student-attendance-summary');
+            if (summaryEl) summaryEl.style.display = 'block';
             loadStudentAttendance();
         }
 
-        // Configure Danger Zone and Settings
+        // Configure Settings Dropdown
         if (userRole === 'Owner') {
             document.getElementById('btn-delete-class').style.display = 'block';
         } else {
             document.getElementById('btn-leave-class').style.display = 'block';
         }
-        
+
         if (['Owner', 'Teacher', 'CR'].includes(userRole)) {
             document.getElementById('btn-change-wallpaper').style.display = 'block';
         }
-
-        // Settings Dropdown Toggle
-        document.getElementById('btn-class-settings').addEventListener('click', (e) => {
-            const dropdown = document.getElementById('class-settings-dropdown');
-            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-            e.stopPropagation();
-        });
 
         await loadClassDetails();
         listenForClassUpdates();
@@ -58,7 +61,8 @@ window.auth.onAuthStateChanged(async (user) => {
 
 function getDisplayRole(role) {
     if (role === 'Owner') return 'Teacher';
-    if (role === 'Teacher') return 'Class Representative';
+    if (role === 'Teacher') return 'Class Rep';
+    if (role === 'CR') return 'Class Rep';
     return role || 'Student';
 }
 
@@ -153,24 +157,26 @@ function renderUnifiedStream() {
     allItems.sort((a, b) => b.timestamp - a.timestamp);
 
     if (allItems.length === 0) {
-        noticesList.innerHTML = '<div class="glass notice-card" style="border-left-color: var(--text-muted);"><p style="color: var(--text-muted); text-align: center;">No updates yet in the stream.</p></div>';
-        if (window.lucide) window.lucide.createIcons();
+        noticesList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No posts yet</h3><p>Announcements and assignments will appear here.</p></div>`;
         return;
     }
 
     let html = '';
     const now = Date.now();
 
+    // Initialize submission cache
+    if (!window._submissionCache) window._submissionCache = {};
+
     allItems.forEach(item => {
         if (item.type === 'notice') {
             const data = item.data;
             const date = data.createdAt ? data.createdAt.toDate().toLocaleString() : 'Just now';
-            
+
             if (data.isDeleted) {
                 html += `
-                    <div class="glass notice-card" style="border-left-color: var(--text-muted); opacity: 0.7; border-radius: 12px; margin-bottom: 1.5rem;">
-                        <p style="color: var(--text-muted); font-style: italic; margin: 0;">🚫 This message was deleted by ${data.deletedBy}</p>
-                        <div class="notice-meta" style="margin-top: 0.5rem;">${date}</div>
+                    <div class="notice-card" style="border-left-color:var(--text-muted);">
+                        <p style="color:var(--text-muted);font-style:italic;margin:0;">🚫 This message was deleted by ${data.deletedBy}</p>
+                        <div class="notice-meta">${date}</div>
                     </div>
                 `;
                 return;
@@ -184,59 +190,58 @@ function renderUnifiedStream() {
                     const safeMessage = data.message.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
                     const safeAttachmentName = data.attachmentName ? data.attachmentName.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
                     noticeActions = `
-                        <div style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 0.25rem;">
-                            <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: var(--text-muted);" onclick="openEditNotice('${item.id}', '${safeTitle}', '${safeMessage}', '${safeAttachmentName}')" title="Edit (15m window)"><i data-lucide="edit-2"></i></button>
-                            <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="deleteNotice('${item.id}')" title="Delete"><i data-lucide="trash-2"></i></button>
+                        <div class="notice-actions">
+                            <button class="btn btn-ghost" style="padding:0.3rem;width:28px;height:28px;" onclick="openEditNotice('${item.id}','${safeTitle}','${safeMessage}','${safeAttachmentName}')" title="Edit (15m window)">
+                                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button class="btn btn-ghost" style="padding:0.3rem;width:28px;height:28px;color:var(--danger);" onclick="deleteNotice('${item.id}')" title="Delete">
+                                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
+                            </button>
                         </div>
                     `;
                 }
             }
-            
+
             let attachmentHtml = '';
             if (data.attachmentUrl) {
                 if (data.attachmentType === 'image') {
-                    attachmentHtml = `<div style="margin-top: 1rem;"><img src="${data.attachmentUrl}" alt="Attachment" style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid var(--border-color); object-fit: contain;"></div>`;
+                    attachmentHtml = `<img class="notice-image" src="${data.attachmentUrl}" alt="Attachment">`;
                 } else {
-                    attachmentHtml = `<div style="margin-top: 1rem;"><a href="${data.attachmentUrl}" target="_blank" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); border-color: var(--primary); text-decoration: none; border-radius: 8px;"><i data-lucide="file-text" style="width: 20px; height: 20px;"></i> Download: ${data.attachmentName || 'Attachment'}</a></div>`;
+                    attachmentHtml = `<div style="margin-top:0.875rem;"><a href="${data.attachmentUrl}" target="_blank" class="btn btn-outline" style="font-size:0.82rem;padding:0.45rem 0.875rem;"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg> ${data.attachmentName || 'Attachment'}</a></div>`;
                 }
             }
-            
-            const editedTag = data.isEdited ? `<span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(Edited)</span>` : '';
+
+            const editedTag = data.isEdited ? `<span style="font-size:0.7rem;color:var(--text-muted);">(edited)</span>` : '';
+            const initials = (data.authorName || 'T')[0].toUpperCase();
 
             html += `
-                <div class="card notice-card" style="position: relative; border-radius: 12px; margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); border-left: 4px solid var(--primary);">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <div style="background: rgba(0, 168, 132, 0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i data-lucide="message-square" style="color: var(--primary); width: 16px; height: 16px;"></i>
-                        </div>
+                <div class="notice-card" style="position:relative;margin-bottom:1rem;">
+                    <div class="author-row">
+                        <div class="author-avatar">${initials}</div>
                         <div>
-                            <span style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">${data.authorName}</span>
-                            <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.5rem;">${date} ${editedTag}</span>
+                            <div class="author-name">${data.authorName} ${editedTag}</div>
+                            <div class="author-time">${date}</div>
                         </div>
                     </div>
                     ${noticeActions}
-                    <h4 style="padding-right: 4rem; margin-bottom: 0.5rem; font-size: 1.1rem;">${data.title}</h4>
-                    <p style="white-space: pre-wrap; margin-bottom: 0.5rem; color: var(--text-muted);">${data.message}</p>
+                    <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;padding-right:5rem;color:var(--text-main);">${data.title}</h4>
+                    <p style="font-size:0.875rem;color:var(--text-sub);white-space:pre-wrap;">${data.message}</p>
                     ${attachmentHtml}
                 </div>
             `;
+
         } else if (item.type === 'assignment') {
             const data = item.data;
             const date = data.createdAt ? data.createdAt.toDate().toLocaleString() : 'Just now';
             const dueDate = new Date(data.dueDate).toLocaleDateString();
-            
+            const isOverdue = new Date(data.dueDate) < new Date();
+
             let attachmentHtml = '';
             if (data.attachmentUrl) {
-                attachmentHtml = `<div style="margin-top: 1rem;"><a href="${data.attachmentUrl}" target="_blank" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; border-radius: 8px;"><i data-lucide="paperclip" style="width: 16px; height: 16px;"></i> ${data.attachmentName || 'Attachment'}</a></div>`;
+                attachmentHtml = `<div style="margin-top:0.875rem;"><a href="${data.attachmentUrl}" target="_blank" class="btn btn-outline" style="font-size:0.82rem;padding:0.45rem 0.875rem;"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg> ${data.attachmentName || 'Attachment'}</a></div>`;
             }
 
             const isTeacher = ['Owner', 'Teacher', 'CR'].includes(userRole);
-            const clickAction = isTeacher ? `onclick="openViewSubmissionsModal('${item.id}', '${data.title.replace(/'/g, "\\'")}')"` : `onclick="alert('Student assignment submission opens here.')"`; // TODO student sub
-            const ctaText = isTeacher ? "View Submissions" : "Submit Assignment";
-
-            html += `
-                <div class="card notice-card" style="position: relative; border-radius: 12px; margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='translateX(0)'" ${clickAction}>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
                         <div style="background: rgba(139, 92, 246, 0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                             <i data-lucide="file-text" style="color: var(--accent); width: 16px; height: 16px;"></i>
                         </div>
@@ -305,37 +310,65 @@ function listenForNotices() {
 
 async function loadMembers() {
     const membersList = document.getElementById('members-list');
+    const membersModalList = document.getElementById('members-modal-list');
+
+    const setHtml = (html) => {
+        if (membersList) membersList.innerHTML = html;
+        if (membersModalList) membersModalList.innerHTML = html;
+    };
+
     try {
         const querySnapshot = await window.db.collection(`classes/${classId}/members`).get();
-        
-        let html = '';
+
+        let teachers = [];
+        let students = [];
+
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             const displayName = data.userName || doc.id.substring(0, 8) + '...';
             const displayRoleName = getDisplayRole(data.role);
-            let roleHtml = `<span style="font-size: 0.75rem; color: var(--primary); background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px;">${displayRoleName}</span>`;
-            
-            let rowAttributes = '';
-            let hoverStyle = '';
-            
+            const badgeClass = data.role === 'Owner' ? 'badge-secondary' : data.role === 'CR' ? 'badge-warning' : data.role === 'Teacher' ? 'badge-accent' : 'badge-success';
+
+            let rowAttrs = '';
             if (userRole === 'Owner' && doc.id !== currentUser.uid) {
-                rowAttributes = `onclick="openMemberManagement(event, '${doc.id}', '${displayName}', '${data.role}')" title="Click to manage role"`;
-                hoverStyle = `cursor: pointer; transition: background 0.2s;`;
+                rowAttrs = `onclick="openMemberManagement(event, '${doc.id}', '${displayName}', '${data.role}')" title="Click to manage role" style="cursor:pointer;"`;
             }
 
-            html += `
-                <div class="member-item member-row-hover" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 8px; ${hoverStyle}" ${rowAttributes} onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
-                    <span style="font-size: 0.875rem;">${displayName}</span>
-                    ${roleHtml}
+            const initial = (displayName[0] || '?').toUpperCase();
+            const rowHtml = `
+                <div class="member-item" ${rowAttrs}>
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0;">${initial}</div>
+                        <span style="font-size:0.9rem;font-weight:500;color:var(--text-main);">${displayName}</span>
+                    </div>
+                    <span class="badge ${badgeClass}">${displayRoleName}</span>
                 </div>
             `;
+
+            if (['Owner', 'Teacher', 'CR'].includes(data.role)) {
+                teachers.push(rowHtml);
+            } else {
+                students.push(rowHtml);
+            }
         });
-        membersList.innerHTML = html;
-        if (window.lucide) window.lucide.createIcons();
+
+        let combinedHtml = '';
+        if (teachers.length > 0) {
+            combinedHtml += `<div style="padding:0.5rem 0.875rem;font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;background:var(--bg-elevated);">Teachers &amp; Staff</div>`;
+            combinedHtml += teachers.join('');
+        }
+        if (students.length > 0) {
+            combinedHtml += `<div style="padding:0.5rem 0.875rem;font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;background:var(--bg-elevated);margin-top:0.5rem;">Students</div>`;
+            combinedHtml += students.join('');
+        }
+
+        if (!combinedHtml) combinedHtml = '<div style="padding:2rem;text-align:center;color:var(--text-muted);">No members found.</div>';
+        setHtml(combinedHtml);
     } catch (error) {
-        membersList.innerHTML = `<div class="member-item" style="color: #ef4444;">Error loading members.</div>`;
+        setHtml(`<div style="padding:2rem;text-align:center;color:var(--danger);">Error loading members.</div>`);
     }
 }
+
 
 // Member Management Context Menu
 window.openMemberManagement = function(event, memberId, name, currentRole) {
@@ -1208,15 +1241,15 @@ document.getElementById('cal-next')?.addEventListener('click', () => {
 // Load Student Attendance
 async function loadStudentAttendance() {
     const section = document.getElementById('student-attendance-summary');
-    if(section) section.style.display = 'flex';
-    
+    if(section) section.style.display = 'block';
+
     try {
         const querySnapshot = await window.db.collection(`classes/${classId}/attendance_records`).get();
         let totalWorkingDays = 0;
         let daysPresent = 0;
-        
+
         attendanceRecordsForCalendar = [];
-        
+
         querySnapshot.forEach(doc => {
             const data = doc.data();
             attendanceRecordsForCalendar.push(data);
@@ -1227,10 +1260,10 @@ async function loadStudentAttendance() {
                 }
             }
         });
-        
+
         const daysAbsent = totalWorkingDays - daysPresent;
         const percentage = totalWorkingDays > 0 ? Math.round((daysPresent / totalWorkingDays) * 100) : 0;
-        
+
         const totalEl = document.getElementById('student-att-total');
         if(totalEl) totalEl.innerText = totalWorkingDays;
         const presentEl = document.getElementById('student-att-present');
@@ -1239,12 +1272,20 @@ async function loadStudentAttendance() {
         if(absentEl) absentEl.innerText = daysAbsent;
         const percentEl = document.getElementById('student-att-percentage');
         if(percentEl) percentEl.innerText = percentage + '%';
-        
+
+        // Animate progress bar
+        const barEl = document.getElementById('student-att-bar');
+        if (barEl) {
+            barEl.style.width = percentage + '%';
+            barEl.className = `progress-fill ${percentage >= 75 ? 'success' : 'danger'}`;
+        }
+
         currentCalendarDate = new Date();
         renderCalendar();
-        
+
     } catch (error) {
         console.error("Error loading attendance:", error);
+
     }
 }
 

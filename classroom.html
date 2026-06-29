@@ -1,229 +1,659 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classroom | IAOP</title>
+    <meta name="description" content="IAOP Classroom – View announcements, assignments, and attendance.">
+
+    <!-- Error Overlay for debugging -->
     <script>
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             var err = document.createElement("div");
-            err.style.cssText = "position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;font-size:20px;";
-            err.innerText = "JS Error: " + msg + " at line " + lineNo + " col " + columnNo;
+            err.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;z-index:9999;padding:12px 20px;font-size:14px;font-family:monospace;";
+            err.innerText = "JS Error: " + msg + " at line " + lineNo;
             if(document.body) document.body.appendChild(err);
             else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(err));
             return false;
         };
         window.addEventListener("unhandledrejection", function(e) {
             var err = document.createElement("div");
-            err.style.cssText = "position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;font-size:20px;";
-            err.innerText = "Promise Rejection: " + (e.reason ? e.reason.message || e.reason : "unknown");
+            err.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;z-index:9999;padding:12px 20px;font-size:14px;font-family:monospace;";
+            err.innerText = "Promise Error: " + (e.reason ? e.reason.message || e.reason : "unknown");
             if(document.body) document.body.appendChild(err);
             else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(err));
         });
     </script>
-    <link rel="stylesheet" href="css/globals.css?v=2">
-    <link rel="stylesheet" href="css/components.css?v=2">
-    <script src="js/theme.js?v=2"></script>
+
+    <link rel="stylesheet" href="css/globals.css?v=3">
+    <link rel="stylesheet" href="css/components.css?v=3">
+    <script src="js/theme.js?v=3"></script>
+
     <style>
-        .class-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin: 2rem 0;
-            padding-bottom: 1rem;
+        /* ── Classroom Layout ─── */
+        .classroom-body {
+            min-height: 100vh;
+            background: var(--bg-main);
+        }
+
+        /* Classroom nav */
+        .classroom-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 64px;
+            background: rgba(15, 15, 26, 0.9);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            gap: 1rem;
         }
-        .class-title {
-            font-size: 2rem;
-            margin-bottom: 0.25rem;
+
+        html[data-theme="light"] .classroom-nav {
+            background: rgba(245, 245, 255, 0.92);
         }
-        .class-meta {
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-        }
-        .sidebar {
-            width: 250px;
+
+        .classroom-back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            color: var(--text-sub);
+            transition: all var(--transition-fast);
             flex-shrink: 0;
         }
-        .main-content {
-            flex-grow: 1;
+
+        .classroom-back-btn:hover { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+
+        .classroom-info { flex: 1; min-width: 0; }
+
+        .classroom-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
         }
-        .layout-flex {
-            display: flex;
-            gap: 2rem;
-            align-items: flex-start;
-        }
-        @media (max-width: 768px) {
-            .layout-flex {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-            }
-        }
-        .notice-card {
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--primary);
-        }
-        .notice-card h4 {
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-        .notice-meta {
-            font-size: 0.75rem;
+
+        .classroom-meta {
+            font-size: 0.72rem;
             color: var(--text-muted);
-            margin-top: 1rem;
-            text-align: right;
+            margin-top: 0.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .member-item {
-            padding: 0.75rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+
+        .classroom-actions {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
         }
-        .member-item:last-child {
-            border-bottom: none;
+
+        /* Wallpaper Banner */
+        #classroom-banner {
+            display: none;
+            width: 100%;
+            height: 180px;
+            background-color: var(--primary);
+            background-size: cover;
+            background-position: center;
+            position: relative;
         }
-        /* Role specifics */
-        #teacher-controls { display: none; }
+
+        #classroom-banner::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to top, var(--bg-main), transparent);
+        }
+
+        /* Tab navigation (Desktop) */
+        .classroom-tabs {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            padding: 0 1.25rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .classroom-tabs::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 768px) {
+            .classroom-tabs { display: none; }
+        }
+
+        /* Content area */
+        .classroom-content {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .classroom-content { padding-bottom: 84px; }
+        }
+
+        /* Teacher controls */
+        #teacher-stream-controls { display: none; }
+
+        /* Role badge in nav */
+        .role-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.625rem;
+            background: var(--primary-soft);
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Attendance summary card */
+        .attendance-summary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .att-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .att-stat {
+            text-align: center;
+            padding: 0.875rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-elevated);
+        }
+
+        .att-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+        }
+
+        .att-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+
+        /* Calendar header */
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            padding: 0 0.25rem;
+        }
+
+        .calendar-nav-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all var(--transition-fast);
+        }
+
+        .calendar-nav-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+
+        /* Members list area */
+        .members-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        /* Settings dropdown */
+        #class-settings-dropdown { min-width: 180px; }
+
+        /* Live class banner */
+        #active-live-container {
+            display: none;
+            background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Attachment styling */
+        .attachment-preview {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--primary-soft);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-md);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .attachment-name {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        /* Notice image */
+        .notice-image {
+            max-width: 100%;
+            max-height: 360px;
+            border-radius: var(--radius-md);
+            margin-top: 0.875rem;
+            border: 1px solid var(--border-color);
+            object-fit: contain;
+        }
+
+        /* Tab content sections */
+        #tab-attendance { display: none; }
+        #tab-members { display: none; }
+
+        /* Upload input hidden */
+        input[type="file"].hidden-file { display: none; }
+
+        /* Deleted notice */
+        .notice-deleted {
+            opacity: 0.5;
+            font-style: italic;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Due date badge */
+        .due-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            background: var(--danger-soft);
+            color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .due-badge.overdue {
+            background: rgba(239,68,68,0.2);
+            border-color: var(--danger);
+        }
+
+        /* Notice action buttons (teacher edit/delete) */
+        .notice-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .notice-card:hover .notice-actions { opacity: 1; }
+
+        /* Teacher attendance form items */
+        .att-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            transition: background var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .att-checkbox-item:hover { background: var(--primary-soft); }
+        .att-checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* Jitsi container */
+        #jitsi-container {
+            width: 100%;
+            height: 480px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: none;
+            margin-top: 1.25rem;
+        }
     </style>
 </head>
-<body>
-    <!-- Top Navigation Bar -->
-    <nav class="navbar" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; position: sticky; top: 0; z-index: 50;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <button class="btn btn-outline" onclick="window.location.href='dashboard.html'" style="padding: 0.5rem; border: none;" title="Back to Dashboard">
-                <i data-lucide="arrow-left"></i>
-            </button>
-            <div style="background: rgba(0, 168, 132, 0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="users" style="color: var(--primary);"></i>
-            </div>
-            <div>
-                <h1 style="font-size: 1.1rem; font-weight: 600; margin: 0; line-height: 1.2; color: var(--text-main);" id="class-name">Loading...</h1>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">Sub: <span id="class-subject">...</span> | Code: <span id="class-code">...</span></div>
+<body class="classroom-body">
+
+    <!-- Top Navigation -->
+    <nav class="classroom-nav">
+        <button class="classroom-back-btn" onclick="window.location.href='dashboard.html'" title="Back to Dashboard">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+
+        <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem;">📚</div>
+
+        <div class="classroom-info">
+            <div class="classroom-name" id="class-name">Loading...</div>
+            <div class="classroom-meta">
+                <span id="class-subject">...</span>
+                &nbsp;·&nbsp; Code: <strong id="class-code" style="letter-spacing:0.06em;">...</strong>
             </div>
         </div>
-        
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <span id="user-role" style="font-size: 0.85rem; font-weight: 600; color: var(--primary);">Role: ...</span>
-            
-            <button class="btn btn-outline" style="border: none;" title="Class Members" onclick="openModal('modal-people')">
-                <i data-lucide="users"></i>
+
+        <div class="classroom-actions">
+            <span class="role-indicator" id="user-role">...</span>
+
+            <!-- Members button -->
+            <button class="btn btn-ghost btn-icon" title="Class Members" onclick="openModal('modal-people')">
+                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </button>
-            
-            <!-- Class Settings Dropdown -->
-            <div style="position: relative;">
-                <button id="btn-class-settings" class="btn btn-outline" style="padding: 0.5rem; border: none;"><i data-lucide="more-vertical"></i></button>
-                <div id="class-settings-dropdown" style="position: absolute; right: 0; top: calc(100% + 0.5rem); display: none; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md); min-width: 200px; z-index: 50; overflow: hidden;">
-                    <button class="btn btn-outline" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: var(--text-main); padding: 0.75rem 1rem; display: none;" id="btn-change-wallpaper"><i data-lucide="image"></i> Change Cover</button>
-                    <button class="btn btn-outline" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: #ef4444; padding: 0.75rem 1rem; display: none;" id="btn-leave-class"><i data-lucide="log-out"></i> Leave Class</button>
-                    <button class="btn btn-outline" style="width: 100%; border: none; border-radius: 0; text-align: left; justify-content: flex-start; color: #ef4444; padding: 0.75rem 1rem; display: none;" id="btn-delete-class"><i data-lucide="trash-2"></i> Delete Class</button>
+
+            <!-- Settings dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-ghost btn-icon" id="btn-class-settings">
+                    <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </button>
+                <div class="dropdown-menu" id="class-settings-dropdown">
+                    <button class="dropdown-item" id="btn-change-wallpaper" style="display:none;">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-5-5L5 21"/></svg>
+                        Change Cover
+                    </button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item danger" id="btn-leave-class" style="display:none;">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        Leave Class
+                    </button>
+                    <button class="dropdown-item danger" id="btn-delete-class" style="display:none;">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 6l-1 14H6L5 6M10 11v6M14 11v6"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 6V4h6v2"/></svg>
+                        Delete Class
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Classroom Wallpaper Banner (Hidden if no wallpaper) -->
-    <div id="classroom-banner" style="display: none; width: 100%; height: 200px; background-color: var(--primary); background-size: cover; background-position: center; position: relative;">
-        <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);"></div>
-        <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
+    <!-- Wallpaper Banner -->
+    <div id="classroom-banner">
+        <input type="file" id="wallpaper-upload" accept="image/*" class="hidden-file">
     </div>
 
-    <!-- Main Stream Content -->
-    <main style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
-        
-        <!-- Teacher Action Area -->
-        <div id="teacher-stream-controls" style="display: none; margin-bottom: 2rem;">
-            <div class="card" style="padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm);">
-                <button class="btn btn-outline" id="btn-post-notice" style="flex: 1; min-width: 150px; justify-content: center;"><i data-lucide="edit-3"></i> Post Announcement</button>
-                <button class="btn btn-outline" id="btn-create-assignment" style="flex: 1; min-width: 150px; justify-content: center; color: var(--accent); border-color: rgba(139, 92, 246, 0.3);"><i data-lucide="file-text"></i> Assignment</button>
-                <button class="btn btn-outline" onclick="openModal('modal-take-attendance')" style="flex: 1; min-width: 150px; justify-content: center; color: #10b981; border-color: rgba(16, 185, 129, 0.3);"><i data-lucide="check-square"></i> Attendance</button>
-                <button class="btn btn-outline" id="btn-start-live" style="flex: 1; min-width: 150px; justify-content: center; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);"><i data-lucide="video"></i> Live Class</button>
-                <button class="btn btn-outline" id="btn-end-live" style="flex: 1; min-width: 150px; justify-content: center; color: #ef4444; display: none;"><i data-lucide="square"></i> End Live Class</button>
-            </div>
-        </div>
+    <!-- Desktop Tab Navigation -->
+    <div class="classroom-tabs">
+        <button class="tab-btn active" data-tab="tab-stream" onclick="switchTab('tab-stream', this)">
+            <svg class="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+            Stream
+        </button>
+        <button class="tab-btn" data-tab="tab-attendance" onclick="switchTab('tab-attendance', this)">
+            <svg class="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Attendance
+        </button>
+        <button class="tab-btn" data-tab="tab-members" onclick="switchTab('tab-members', this)">
+            <svg class="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            Members
+        </button>
+    </div>
 
-        <!-- Live Lecture Room (Embedded in Stream when active) -->
-        <div id="active-live-container" class="card" style="display: none; padding: 2rem; border: 2px solid #ef4444; text-align: center; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
-                <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%; animation: pulse 2s infinite;"></div>
-                <h3 style="margin: 0; font-size: 1.5rem; color: #ef4444;">Live Class in Progress</h3>
-            </div>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Join now to participate in the live session.</p>
-            <button class="btn btn-primary" style="background: #ef4444; padding: 0.75rem 2rem; font-size: 1.1rem;" id="btn-join-live"><i data-lucide="play"></i> Join Live Class</button>
-            <div id="jitsi-container" style="width: 100%; height: 500px; border-radius: 8px; overflow: hidden; display: none; margin-top: 2rem;"></div>
-        </div>
+    <!-- Main Content -->
+    <main class="classroom-content">
 
-        <!-- Student Attendance Summary Card -->
-        <div id="student-attendance-summary" class="card" style="display: none; margin-bottom: 2rem; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #10b981;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 50%;">
-                    <i data-lucide="pie-chart" style="color: #10b981; width: 24px; height: 24px;"></i>
+        <!-- ── STREAM TAB ─── -->
+        <div id="tab-stream" class="tab-content active">
+
+            <!-- Teacher Controls (hidden for students) -->
+            <div id="teacher-stream-controls" class="teacher-controls-bar">
+                <button class="teacher-control-btn" id="btn-post-notice">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Announcement
+                </button>
+                <button class="teacher-control-btn violet" id="btn-create-assignment">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    Assignment
+                </button>
+                <button class="teacher-control-btn green" onclick="openModal('modal-take-attendance')">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Attendance
+                </button>
+                <button class="teacher-control-btn red" id="btn-start-live">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    Live Class
+                </button>
+                <button class="teacher-control-btn red" id="btn-end-live" style="display:none;">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    End Live
+                </button>
+            </div>
+
+            <!-- Live Class Active Banner -->
+            <div id="active-live-container">
+                <div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;margin-bottom:1rem;">
+                    <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+                    <h3 style="font-size:1.2rem;color:var(--danger);">Class in Progress</h3>
                 </div>
-                <div>
-                    <h4 style="margin: 0 0 0.25rem 0;">My Attendance</h4>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">Present: <span id="student-att-present" style="font-weight: 600; color: #10b981;">--</span> | Absent: <span id="student-att-absent" style="font-weight: 600; color: #ef4444;">--</span></div>
+                <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.25rem;">Your teacher has started a live class session.</p>
+                <button class="btn btn-danger" id="btn-join-live" style="padding:0.75rem 2rem;">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Join Live Class
+                </button>
+                <div id="jitsi-container"></div>
+            </div>
+
+            <!-- Stream feed -->
+            <div id="notices-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>Loading stream...</h3>
                 </div>
             </div>
-            <div style="font-size: 2rem; font-weight: 700; color: #10b981;" id="student-att-percentage">--%</div>
         </div>
 
-        <!-- The Universal Stream -->
-        <div id="notices-list">
-            <div style="text-align: center; color: var(--text-muted); padding: 3rem;">Loading stream...</div>
+        <!-- ── ATTENDANCE TAB ─── -->
+        <div id="tab-attendance" class="tab-content">
+
+            <!-- Student Attendance Summary (shown when student) -->
+            <div id="student-attendance-summary" class="attendance-summary">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+                    <h3 style="font-size:1rem;font-weight:700;">My Attendance</h3>
+                    <div style="font-size:2.5rem;font-weight:800;background:var(--gradient-success);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" id="student-att-percentage">--%</div>
+                </div>
+                <div class="progress-bar" style="margin-bottom:1rem;">
+                    <div class="progress-fill success" id="student-att-bar" style="width:0%"></div>
+                </div>
+                <div class="att-stats">
+                    <div class="att-stat" style="border:1px solid rgba(99,102,241,0.2);">
+                        <div class="att-stat-value" id="student-att-total" style="color:var(--primary);">--</div>
+                        <div class="att-stat-label">Total Days</div>
+                    </div>
+                    <div class="att-stat" style="border:1px solid rgba(16,185,129,0.2);">
+                        <div class="att-stat-value" id="student-att-present" style="color:var(--success);">--</div>
+                        <div class="att-stat-label">Present</div>
+                    </div>
+                    <div class="att-stat" style="border:1px solid rgba(239,68,68,0.2);">
+                        <div class="att-stat-value" id="student-att-absent" style="color:var(--danger);">--</div>
+                        <div class="att-stat-label">Absent</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Calendar -->
+            <div class="card" style="padding:1.25rem;margin-bottom:1.5rem;" id="attendance-calendar-card">
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn" id="cal-prev">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <span id="cal-month-year" style="font-size:0.9rem;font-weight:700;color:var(--text-main);">--</span>
+                    <button class="calendar-nav-btn" id="cal-next">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">Su</div>
+                    <div class="calendar-day-header">Mo</div>
+                    <div class="calendar-day-header">Tu</div>
+                    <div class="calendar-day-header">We</div>
+                    <div class="calendar-day-header">Th</div>
+                    <div class="calendar-day-header">Fr</div>
+                    <div class="calendar-day-header">Sa</div>
+                </div>
+                <div class="calendar-grid" id="cal-days-grid"></div>
+
+                <!-- Legend -->
+                <div style="display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap;">
+                    <span style="display:flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:var(--text-muted);">
+                        <span style="width:12px;height:12px;background:var(--success-soft);border-radius:3px;display:inline-block;border:1px solid rgba(16,185,129,0.3);"></span> Present
+                    </span>
+                    <span style="display:flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:var(--text-muted);">
+                        <span style="width:12px;height:12px;background:var(--danger-soft);border-radius:3px;display:inline-block;border:1px solid rgba(239,68,68,0.3);"></span> Absent
+                    </span>
+                    <span style="display:flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:var(--text-muted);">
+                        <span style="width:12px;height:12px;background:var(--warning-soft);border-radius:3px;display:inline-block;border:1px solid rgba(245,158,11,0.3);"></span> Holiday
+                    </span>
+                </div>
+            </div>
+
+            <!-- Teacher: Attendance Management -->
+            <div id="teacher-att-section" style="display:none;">
+                <div class="section-title">Manage Attendance</div>
+                <button class="btn btn-primary" onclick="openModal('modal-take-attendance')" style="margin-bottom:1rem;">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Take / Update Attendance
+                </button>
+                <button class="btn btn-outline" id="btn-open-report-modal" style="margin-left:0.75rem;">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                    Download PDF Report
+                </button>
+            </div>
         </div>
+
+        <!-- ── MEMBERS TAB ─── -->
+        <div id="tab-members" class="tab-content">
+            <div class="section-title">Class Members</div>
+            <div class="members-container" id="members-list">
+                <div style="padding:2rem;text-align:center;color:var(--text-muted);">Loading members...</div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- Modal for People -->
+    <!-- ═══ MOBILE BOTTOM NAV ═══ -->
+    <nav class="bottom-nav">
+        <button class="bottom-nav-item active" id="mob-tab-stream" onclick="switchTab('tab-stream', null, 'mob-tab-stream')">
+            <svg class="bottom-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+            Stream
+        </button>
+        <button class="bottom-nav-item" id="mob-tab-attendance" onclick="switchTab('tab-attendance', null, 'mob-tab-attendance')">
+            <svg class="bottom-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Attendance
+        </button>
+        <button class="bottom-nav-item" id="mob-tab-members" onclick="switchTab('tab-members', null, 'mob-tab-members')">
+            <svg class="bottom-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            Members
+        </button>
+    </nav>
+
+    <!-- ═══════════════════ MODALS ═══════════════════ -->
+
+    <!-- Modal: Class Members -->
     <div id="modal-people" class="modal-overlay">
-        <div class="modal-content glass glass-panel" style="max-width: 600px;">
-            <div class="flex-between" style="margin-bottom: 1.5rem;">
-                <h3 style="margin: 0;">Class Members</h3>
-                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Class Members</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            <div id="members-list" style="max-height: 400px; overflow-y: auto;">
-                <div class="member-item" style="color: var(--text-muted);">Loading...</div>
+            <div id="members-modal-list" style="max-height:400px;overflow-y:auto;">
+                <div style="color:var(--text-muted);text-align:center;padding:2rem;">Loading...</div>
             </div>
         </div>
     </div>
 
-    <!-- Modal for Take Attendance -->
+    <!-- Modal: Take Attendance -->
     <div id="modal-take-attendance" class="modal-overlay">
-        <div class="modal-content glass glass-panel" style="max-width: 600px;">
-            <div class="flex-between" style="margin-bottom: 1.5rem;">
-                <h3 style="margin: 0;">Take Attendance</h3>
-                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Take Attendance</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
-                <button class="btn btn-outline" style="border-color: var(--accent); color: var(--accent); padding: 0.5rem 1rem;" id="btn-open-report-modal">📥 Download PDF Report</button>
+
+            <div style="margin-bottom:1rem;display:flex;justify-content:flex-end;">
+                <button class="btn btn-outline" style="font-size:0.8rem;" id="btn-open-report-modal-att">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                    PDF Report
+                </button>
             </div>
+
             <form id="form-take-attendance">
-                <div class="grid-2" style="margin-bottom: 1.5rem; gap: 1rem;">
-                    <div class="input-group" style="margin: 0;">
+                <div class="grid-2" style="margin-bottom:1.25rem;">
+                    <div class="input-group" style="margin:0;">
                         <label class="input-label">Date</label>
                         <input type="date" id="attendance-date" class="input-field" required>
                     </div>
-                    <div style="display: flex; align-items: center; justify-content: center;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 600; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; justify-content: center;">
-                            <input type="checkbox" id="attendance-holiday" style="width: 1.25rem; height: 1.25rem;">
-                            Mark as Holiday
+                    <div style="display:flex;align-items:flex-end;">
+                        <label style="display:flex;align-items:center;gap:0.625rem;cursor:pointer;padding:0.75rem 1rem;border:1px solid var(--border-color);border-radius:var(--radius-md);width:100%;justify-content:center;font-size:0.875rem;font-weight:600;color:var(--text-sub);transition:all var(--transition-fast);" id="holiday-label">
+                            <input type="checkbox" id="attendance-holiday" style="width:16px;height:16px;accent-color:var(--warning);">
+                            🏖️ Holiday
                         </label>
                     </div>
                 </div>
-                
+
                 <div id="attendance-list-container">
-                    <div style="display: flex; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
-                        <span style="font-weight: 600;">Student Name</span>
-                        <span style="font-weight: 600;">Present?</span>
+                    <div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;background:var(--bg-elevated);border-radius:var(--radius-sm);margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Student</span>
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Present</span>
                     </div>
-                    <div id="attendance-list" style="max-height: 400px; overflow-y: auto; margin-bottom: 1rem;">
-                        <div style="color: var(--text-muted);">Loading students...</div>
+                    <div id="attendance-list" style="max-height:350px;overflow-y:auto;margin-bottom:1rem;">
+                        <div style="color:var(--text-muted);padding:1.5rem;text-align:center;">Loading students...</div>
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                     <button type="button" class="btn btn-outline close-modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btn-submit-attendance">Save Record</button>
                 </div>
@@ -231,10 +661,62 @@
         </div>
     </div>
 
-    <!-- Modal for Edit Notice -->
+    <!-- Modal: Post Announcement -->
+    <div id="modal-post-notice" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Post Announcement</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form id="form-post-notice">
+                <div class="input-group">
+                    <label class="input-label">Title</label>
+                    <input type="text" id="notice-title" class="input-field" placeholder="e.g., Assignment Reminder" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Message</label>
+                    <textarea id="notice-message" class="input-field" rows="4" placeholder="Write your announcement here..." required></textarea>
+                </div>
+                <div style="display:flex;gap:0.625rem;align-items:center;margin-bottom:0.875rem;">
+                    <input type="file" id="notice-file-upload" class="hidden-file">
+                    <input type="file" id="notice-camera-upload" accept="image/*" capture="environment" class="hidden-file">
+                    <input type="file" id="notice-image-upload" accept="image/*" class="hidden-file">
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('notice-camera-upload').click()" title="Camera">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('notice-image-upload').click()" title="Photo">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-5-5L5 21"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('notice-file-upload').click()" title="File">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    </button>
+                    <span id="notice-attachment-label" style="font-size:0.8rem;color:var(--text-muted);">Add attachment (optional)</span>
+                </div>
+                <div class="attachment-preview" id="notice-attachment-preview">
+                    <span class="attachment-name" id="notice-attachment-name">filename.jpg</span>
+                    <button type="button" class="btn btn-ghost" style="padding:0.25rem;color:var(--danger);" onclick="removeNoticeAttachment()">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-notice">Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Announcement -->
     <div id="modal-edit-notice" class="modal-overlay">
-        <div class="modal-content glass glass-panel">
-            <h3 style="margin-bottom: 1.5rem;">Edit Announcement</h3>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Announcement</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
             <form id="form-edit-notice">
                 <input type="hidden" id="edit-notice-id">
                 <div class="input-group">
@@ -245,24 +727,28 @@
                     <label class="input-label">Message</label>
                     <textarea id="edit-notice-message" class="input-field" rows="4" required></textarea>
                 </div>
-                
-                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-                    <input type="file" id="edit-notice-file-upload" style="display: none;">
-                    <input type="file" id="edit-notice-camera-upload" accept="image/*" capture="environment" style="display: none;">
-                    <input type="file" id="edit-notice-image-upload" accept="image/*" style="display: none;">
-
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('edit-notice-camera-upload').click()" title="Camera"><i data-lucide="camera"></i></button>
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('edit-notice-image-upload').click()" title="Photo/Gallery"><i data-lucide="image"></i></button>
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('edit-notice-file-upload').click()" title="Document"><i data-lucide="file-text" style="width: 20px; height: 20px;"></i></button>
+                <div style="display:flex;gap:0.625rem;align-items:center;margin-bottom:0.875rem;">
+                    <input type="file" id="edit-notice-file-upload" class="hidden-file">
+                    <input type="file" id="edit-notice-camera-upload" accept="image/*" capture="environment" class="hidden-file">
+                    <input type="file" id="edit-notice-image-upload" accept="image/*" class="hidden-file">
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('edit-notice-camera-upload').click()" title="Camera">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('edit-notice-image-upload').click()" title="Photo">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-5-5L5 21"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('edit-notice-file-upload').click()" title="File">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    </button>
                 </div>
-                
-                <div id="edit-notice-attachment-preview" style="display: none; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
-                    <span id="edit-notice-attachment-name" style="font-size: 0.875rem; color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;">filename.jpg</span>
-                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="removeEditNoticeAttachment()"><i data-lucide="x"></i></button>
+                <div class="attachment-preview" id="edit-notice-attachment-preview">
+                    <span class="attachment-name" id="edit-notice-attachment-name">filename.jpg</span>
+                    <button type="button" class="btn btn-ghost" style="padding:0.25rem;color:var(--danger);" onclick="removeEditNoticeAttachment()">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
                 <input type="hidden" id="edit-notice-attachment-removed" value="false">
-
-                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                     <button type="button" class="btn btn-outline close-modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btn-submit-edit-notice">Save Changes</button>
                 </div>
@@ -270,50 +756,15 @@
         </div>
     </div>
 
-    <!-- Modal for Post Notice -->
-    <div id="modal-post-notice" class="modal-overlay">
-        <div class="modal-content glass glass-panel">
-            <h3 style="margin-bottom: 1.5rem;">Post Announcement</h3>
-            <form id="form-post-notice">
-                <div class="input-group">
-                    <label class="input-label">Title</label>
-                    <input type="text" id="notice-title" class="input-field" placeholder="e.g., Assignment Due" required>
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Message</label>
-                    <textarea id="notice-message" class="input-field" rows="4" placeholder="Write your announcement here..." required></textarea>
-                </div>
-                
-                <!-- WhatsApp style attachment buttons -->
-                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-                    <!-- Hidden file inputs -->
-                    <input type="file" id="notice-file-upload" style="display: none;">
-                    <input type="file" id="notice-camera-upload" accept="image/*" capture="environment" style="display: none;">
-                    <input type="file" id="notice-image-upload" accept="image/*" style="display: none;">
-
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('notice-camera-upload').click()" title="Camera"><i data-lucide="camera"></i></button>
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('notice-image-upload').click()" title="Photo/Gallery"><i data-lucide="image"></i></button>
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('notice-file-upload').click()" title="Document"><i data-lucide="file-text" style="width: 20px; height: 20px;"></i></button>
-                </div>
-                
-                <!-- Preview Area -->
-                <div id="notice-attachment-preview" style="display: none; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
-                    <span id="notice-attachment-name" style="font-size: 0.875rem; color: var(--text-main); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;">filename.jpg</span>
-                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="removeNoticeAttachment()"><i data-lucide="x"></i></button>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                    <button type="button" class="btn btn-outline close-modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="btn-submit-notice">Post</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal for Create Assignment -->
+    <!-- Modal: Create Assignment -->
     <div id="modal-create-assignment" class="modal-overlay">
-        <div class="modal-content glass glass-panel">
-            <h3 style="margin-bottom: 1.5rem;">Create Assignment</h3>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Assignment</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
             <form id="form-create-assignment">
                 <div class="input-group">
                     <label class="input-label">Title</label>
@@ -321,24 +772,26 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label">Instructions (Optional)</label>
-                    <textarea id="assignment-instructions" class="input-field" rows="3" placeholder="Provide instructions..."></textarea>
+                    <textarea id="assignment-instructions" class="input-field" rows="3" placeholder="Provide detailed instructions..."></textarea>
                 </div>
                 <div class="input-group">
                     <label class="input-label">Due Date</label>
                     <input type="date" id="assignment-due-date" class="input-field" required>
                 </div>
-                
-                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-                    <input type="file" id="assignment-file-upload" style="display: none;">
-                    <button type="button" class="btn btn-outline" style="border-radius: 50%; width: 2.5rem; height: 2.5rem; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="document.getElementById('assignment-file-upload').click()" title="Attachment"><i data-lucide="paperclip"></i></button>
+                <div style="display:flex;gap:0.625rem;align-items:center;margin-bottom:0.875rem;">
+                    <input type="file" id="assignment-file-upload" class="hidden-file">
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="document.getElementById('assignment-file-upload').click()" title="Attach File">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    </button>
+                    <span style="font-size:0.8rem;color:var(--text-muted);">Attach assignment file (optional)</span>
                 </div>
-                
-                <div id="assignment-attachment-preview" style="display: none; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
-                    <span id="assignment-attachment-name" style="font-size: 0.875rem; color: var(--text-main); font-weight: 500;">filename.pdf</span>
-                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; color: #ef4444;" onclick="removeAssignmentAttachment()"><i data-lucide="x"></i></button>
+                <div class="attachment-preview" id="assignment-attachment-preview">
+                    <span class="attachment-name" id="assignment-attachment-name">filename.pdf</span>
+                    <button type="button" class="btn btn-ghost" style="padding:0.25rem;color:var(--danger);" onclick="removeAssignmentAttachment()">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                     <button type="button" class="btn btn-outline close-modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btn-submit-assignment">Assign</button>
                 </div>
@@ -346,25 +799,26 @@
         </div>
     </div>
 
-    <!-- Modal for View Submissions (Teacher Checklist) -->
+    <!-- Modal: View Submissions (Teacher Checklist) -->
     <div id="modal-view-submissions" class="modal-overlay">
-        <div class="modal-content glass glass-panel" style="max-width: 600px;">
-            <div class="flex-between" style="margin-bottom: 1.5rem;">
-                <h3 style="margin: 0;" id="view-submissions-title">Submissions</h3>
-                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="view-submissions-title">Submissions</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            
+            <p style="font-size:0.825rem;color:var(--text-muted);margin-bottom:1.25rem;">Check students who have completed this assignment.</p>
             <form id="form-view-submissions">
                 <input type="hidden" id="checklist-assignment-id">
-                <div style="display: flex; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
-                    <span style="font-weight: 600;">Student Name</span>
-                    <span style="font-weight: 600;">Completed?</span>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;background:var(--bg-elevated);border-radius:var(--radius-sm);margin-bottom:0.75rem;">
+                    <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Student</span>
+                    <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Completed</span>
                 </div>
-                <div id="submissions-list" style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
-                    <div style="color: var(--text-muted);">Loading students...</div>
+                <div id="submissions-list" style="max-height:380px;overflow-y:auto;margin-bottom:1.25rem;">
+                    <div style="color:var(--text-muted);text-align:center;padding:1.5rem;">Loading students...</div>
                 </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                     <button type="button" class="btn btn-outline close-modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="btn-submit-checklist">Save Record</button>
                 </div>
@@ -372,100 +826,105 @@
         </div>
     </div>
 
-    <!-- Modal for Download Report -->
+    <!-- Modal: Download Report -->
     <div id="modal-download-report" class="modal-overlay">
-        <div class="modal-content glass glass-panel">
-            <h3 style="margin-bottom: 1.5rem;">Download Class Report</h3>
-            <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.875rem;">Select what data to include in the PDF report for this class.</p>
-            
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Download Class Report</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">Select what data to include in the PDF report.</p>
             <form id="form-download-report">
-                <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                        <input type="checkbox" id="report-include-attendance" checked style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);">
-                        <span style="font-weight: 500;">Include Attendance Records</span>
+                <div style="display:flex;flex-direction:column;gap:0.875rem;margin-bottom:1.5rem;">
+                    <label style="display:flex;align-items:center;gap:0.875rem;cursor:pointer;padding:1rem;border:1px solid var(--border-color);border-radius:var(--radius-md);transition:all var(--transition-fast);" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-soft)'" onmouseout="this.style.borderColor='var(--border-color)';this.style.background='transparent'">
+                        <input type="checkbox" id="report-include-attendance" checked style="width:18px;height:18px;accent-color:var(--primary);">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;">Attendance Records</div>
+                            <div style="font-size:0.78rem;color:var(--text-muted);">Days present, absent, and percentage</div>
+                        </div>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                        <input type="checkbox" id="report-include-assignments" checked style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);">
-                        <span style="font-weight: 500;">Include Assignment Submissions</span>
+                    <label style="display:flex;align-items:center;gap:0.875rem;cursor:pointer;padding:1rem;border:1px solid var(--border-color);border-radius:var(--radius-md);transition:all var(--transition-fast);" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-soft)'" onmouseout="this.style.borderColor='var(--border-color)';this.style.background='transparent'">
+                        <input type="checkbox" id="report-include-assignments" checked style="width:18px;height:18px;accent-color:var(--primary);">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;">Assignment Submissions</div>
+                            <div style="font-size:0.78rem;color:var(--text-muted);">Completed, pending, and percentage</div>
+                        </div>
                     </label>
                 </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;">
                     <button type="button" class="btn btn-outline close-modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="btn-generate-pdf">Generate PDF</button>
+                    <button type="submit" class="btn btn-primary" id="btn-generate-pdf">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                        Generate PDF
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Firebase Compat SDKs -->
-    <!-- Transfer Ownership Modal -->
+    <!-- Modal: Transfer Ownership -->
     <div class="modal-overlay" id="modal-transfer-ownership">
-        <div class="modal glass">
-            <div class="flex-between" style="margin-bottom: 1.5rem;">
-                <h2 style="color: #ef4444; display: flex; align-items: center; gap: 0.5rem;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                    Transfer Ownership
-                </h2>
-                <button class="btn btn-outline close-modal" style="padding: 0.25rem 0.75rem;"><i data-lucide="x"></i></button>
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color:var(--danger);">⚠️ Transfer Ownership</h3>
+                <button class="btn btn-ghost btn-icon close-modal">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
-            <p style="margin-bottom: 1.5rem; line-height: 1.5;">
-                You are about to permanently transfer ownership of this class to <strong id="transfer-target-name"></strong>. 
-                You will lose your Owner privileges and teacher controls immediately.
+            <p style="margin-bottom:1.25rem;font-size:0.875rem;color:var(--text-sub);line-height:1.6;">
+                You are about to permanently transfer ownership to <strong id="transfer-target-name" style="color:var(--text-main);"></strong>. You will lose all Teacher/Owner privileges immediately.
             </p>
             <form id="form-transfer-ownership">
                 <div class="input-group">
-                    <label class="input-label" for="transfer-my-new-role">Choose your new role:</label>
+                    <label class="input-label">Your new role after transfer:</label>
                     <select id="transfer-my-new-role" class="input-field" required>
-                        <option value="Teacher">Teacher (Keep some controls)</option>
+                        <option value="Teacher">Class Representative (Keep some controls)</option>
                         <option value="Student">Student (Lose all controls)</option>
                     </select>
                 </div>
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1; background: #ef4444;">Transfer Now</button>
+                <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+                    <button type="button" class="btn btn-outline close-modal" style="flex:1;">Cancel</button>
+                    <button type="submit" class="btn btn-danger" style="flex:1;">Transfer Now</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Leave Class Modal -->
+    <!-- Modal: Leave Class -->
     <div class="modal-overlay" id="modal-leave-class">
-        <div class="modal glass">
-            <h3 style="margin-bottom: 1.5rem; color: #ef4444;">Leave Class</h3>
-            <p style="margin-bottom: 1.5rem; line-height: 1.5;">
-                Are you sure you want to leave this class? You will no longer have access to announcements or attendance records.
-            </p>
+        <div class="modal-content" style="max-width:380px;text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:1rem;">🚪</div>
+            <h3 style="margin-bottom:0.75rem;color:var(--danger);">Leave Class?</h3>
+            <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.75rem;line-height:1.6;">You will no longer have access to announcements, assignments, or attendance records for this class.</p>
             <form id="form-leave-class">
-                <div style="display: flex; gap: 1rem;">
-                    <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1; background: #ef4444;">Leave Class</button>
+                <div style="display:flex;gap:0.75rem;">
+                    <button type="button" class="btn btn-outline close-modal" style="flex:1;">Cancel</button>
+                    <button type="submit" class="btn btn-danger" style="flex:1;">Leave Class</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Delete Class Modal -->
+    <!-- Modal: Delete Class -->
     <div class="modal-overlay" id="modal-delete-class">
-        <div class="modal glass">
-            <h3 style="margin-bottom: 1.5rem; color: #ef4444;">Permanently Delete Class</h3>
-            <p style="margin-bottom: 1.5rem; line-height: 1.5;">
-                This action is irreversible. The class, all members, and all records will be permanently deleted for everyone.
-            </p>
+        <div class="modal-content" style="max-width:380px;text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:1rem;">🗑️</div>
+            <h3 style="margin-bottom:0.75rem;color:var(--danger);">Delete Class?</h3>
+            <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.75rem;line-height:1.6;">This action is <strong>irreversible</strong>. The class, all members, and all data will be permanently deleted for everyone.</p>
             <form id="form-delete-class">
-                <div style="display: flex; gap: 1rem;">
-                    <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1; background: #ef4444;">Delete Permanently</button>
+                <div style="display:flex;gap:0.75rem;">
+                    <button type="button" class="btn btn-outline close-modal" style="flex:1;">Cancel</button>
+                    <button type="submit" class="btn btn-danger" style="flex:1;">Delete Permanently</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- jsPDF for PDF generation -->
+    <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    
-    <!-- Jitsi Meet API -->
     <script src="https://meet.jit.si/external_api.js"></script>
 
     <!-- Firebase Compat SDKs -->
@@ -473,32 +932,65 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-    <script src="js/firebase-config.js?v=2"></script>
-    <script src="js/auth.js?v=2"></script>
-    <script src="js/classroom.js?v=2"></script>
-    
-    <!-- Sidebar Logic -->
+    <script src="js/firebase-config.js?v=3"></script>
+    <script src="js/auth.js?v=3"></script>
+    <script src="js/classroom.js?v=3"></script>
+
     <script>
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebar-overlay');
-        const openBtn = document.getElementById('btn-open-sidebar');
-        const closeBtn = document.getElementById('btn-close-sidebar');
+        // ── Tab switching (desktop + mobile) ──
+        function switchTab(tabId, desktopBtn, mobileId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            // Remove active from desktop tabs
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            // Remove active from mobile nav
+            document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
 
-        function openSidebar() {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('active');
+            // Show selected
+            const target = document.getElementById(tabId);
+            if (target) target.classList.add('active');
+
+            // Activate desktop tab button
+            if (desktopBtn) desktopBtn.classList.add('active');
+            // Also sync desktop
+            document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
+
+            // Activate mobile button
+            if (mobileId) {
+                const mobBtn = document.getElementById(mobileId);
+                if (mobBtn) mobBtn.classList.add('active');
+            }
+            // Sync mobile based on desktop trigger
+            const mobileMap = { 'tab-stream': 'mob-tab-stream', 'tab-attendance': 'mob-tab-attendance', 'tab-members': 'mob-tab-members' };
+            if (mobileMap[tabId] && !mobileId) {
+                const mobBtn = document.getElementById(mobileMap[tabId]);
+                if (mobBtn) mobBtn.classList.add('active');
+            }
+            // Sync desktop based on mobile trigger
+            if (mobileId && desktopBtn === null) {
+                const deskBtns = document.querySelectorAll(`[data-tab="${tabId}"]`);
+                deskBtns.forEach(b => b.classList.add('active'));
+            }
         }
 
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('active');
-        }
+        // Settings dropdown
+        document.getElementById('btn-class-settings')?.addEventListener('click', (e) => {
+            const menu = document.getElementById('class-settings-dropdown');
+            menu.classList.toggle('active');
+            e.stopPropagation();
+        });
 
-        openBtn?.addEventListener('click', openSidebar);
-        closeBtn?.addEventListener('click', closeSidebar);
-        sidebarOverlay?.addEventListener('click', closeSidebar);
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#btn-class-settings')) {
+                document.getElementById('class-settings-dropdown')?.classList.remove('active');
+            }
+        });
+
+        // Report button in attendance modal
+        document.getElementById('btn-open-report-modal-att')?.addEventListener('click', () => {
+            closeModal('modal-take-attendance');
+            openModal('modal-download-report');
+        });
     </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>lucide.createIcons();</script>
 </body>
 </html>

@@ -1,44 +1,47 @@
-// Run immediately to prevent FOUC (Flash of Unstyled Content)
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
+// Run IMMEDIATELY to prevent FOUC (Flash of Unstyled Content)
+(function() {
+    const saved = localStorage.getItem('iaop-theme') || localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
     } else {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
     }
-}
-initTheme();
+})();
 
-// Handle DOM interactions once loaded
+// Global theme toggle helper used by dashboard and classroom pages
 document.addEventListener('DOMContentLoaded', () => {
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    
-    function updateBtnUI() {
-        if (!themeToggleBtn) return;
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        themeToggleBtn.innerHTML = currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
-    }
-    
-    updateBtnUI();
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
 
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateBtnUI();
-        });
+    function updateUI() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        // Support both icon-only and text variants
+        const iconEl = btn.querySelector('#theme-icon') || btn;
+        const labelEl = btn.querySelector('#theme-label');
+        if (labelEl) {
+            iconEl.textContent = isDark ? '☀️' : '🌙';
+            labelEl.textContent = isDark ? 'Light' : 'Dark';
+        } else {
+            btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark';
+        }
     }
 
-    // Listen for system changes if no manual override
+    updateUI();
+
+    btn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('iaop-theme', next);
+        updateUI();
+    });
+
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (!localStorage.getItem('theme')) {
-            const newTheme = e.matches ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            updateBtnUI();
+        if (!localStorage.getItem('iaop-theme') && !localStorage.getItem('theme')) {
+            const next = e.matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            updateUI();
         }
     });
 });
