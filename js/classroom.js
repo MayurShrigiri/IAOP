@@ -631,7 +631,7 @@ document.getElementById('class-logo-upload')?.addEventListener('change', async e
 /* ── User Profile DP ─── */
 document.getElementById('btn-change-dp')?.addEventListener('click', () => {
     document.getElementById('user-dp-upload').click();
-    document.getElementById('profile-dropdown')?.classList.remove('active');
+    document.getElementById('profile-dropdown')?.classList.remove('open');
 });
 document.getElementById('user-dp-upload')?.addEventListener('change', async e => {
     const file = e.target.files[0];
