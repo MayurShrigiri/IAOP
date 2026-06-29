@@ -96,6 +96,8 @@ html[data-theme="dark"] {
     --shadow-sm:       0 1px 3px rgba(0,0,0,0.3);
     --shadow-md:       0 4px 6px rgba(0,0,0,0.25);
     --shadow-lg:       0 10px 15px rgba(0,0,0,0.3);
+
+    --gradient-hero:   linear-gradient(135deg, #0a0f0d 0%, #111a15 50%, #061f13 100%);
 }
 
 /* ── Reset ─── */

@@ -15,9 +15,9 @@
         }
         /* Soft decorative circles */
         .auth-deco{position:absolute;border-radius:50%;pointer-events:none}
-        .auth-deco-1{width:360px;height:360px;background:radial-gradient(circle,rgba(16,185,129,0.12),transparent);top:-100px;left:-100px}
-        .auth-deco-2{width:280px;height:280px;background:radial-gradient(circle,rgba(13,148,136,0.1),transparent);bottom:-80px;right:-60px}
-        .auth-deco-3{width:180px;height:180px;background:radial-gradient(circle,rgba(16,185,129,0.08),transparent);top:30%;right:10%;animation:float 8s ease-in-out infinite}
+        .auth-deco-1{width:360px;height:360px;background:radial-gradient(circle,var(--primary-glow),transparent);top:-100px;left:-100px}
+        .auth-deco-2{width:280px;height:280px;background:radial-gradient(circle,var(--success-soft),transparent);bottom:-80px;right:-60px}
+        .auth-deco-3{width:180px;height:180px;background:radial-gradient(circle,var(--primary-soft),transparent);top:30%;right:10%;animation:float 8s ease-in-out infinite}
 
         .auth-wrapper{position:relative;z-index:1;width:100%;max-width:400px}
 
@@ -183,20 +183,7 @@
         document.getElementById('login-google-btn').addEventListener('click', handleGoogleLogin);
         document.getElementById('signup-google-btn').addEventListener('click', handleGoogleLogin);
 
-        // Theme toggle
-        const lbl = document.getElementById('theme-label');
-        function syncThemeBtn() {
-            const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (lbl) lbl.textContent = dark ? 'Light' : 'Dark';
-        }
-        syncThemeBtn();
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            const cur = document.documentElement.getAttribute('data-theme');
-            const next = cur === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('iaop-theme', next);
-            syncThemeBtn();
-        });
+        // Theme toggle is now fully handled by js/theme.js
     </script>
 </body>
 </html>
