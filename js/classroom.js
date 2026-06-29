@@ -123,8 +123,8 @@ document.addEventListener('click', (e) => {
 /* ── Role display ─── */
 function getDisplayRole(role) {
     if (role === 'Owner')   return 'Teacher';
-    if (role === 'Teacher') return 'Class Rep';
-    if (role === 'CR')      return 'Class Rep';
+    if (role === 'Teacher') return 'CR';
+    if (role === 'CR')      return 'CR';
     return role || 'Student';
 }
 
@@ -485,7 +485,7 @@ async function loadMembers() {
 
         let html = '';
         if (teachers.length) {
-            html += `<div class="section-label">Teachers &amp; Staff</div>${teachers.join('')}`;
+            html += `<div class="section-label">Teacher &amp; CR</div>${teachers.join('')}`;
         }
         if (students.length) {
             html += `<div class="section-label" style="margin-top:0.5rem;">Students</div>${students.join('')}`;
@@ -504,7 +504,7 @@ window.openMemberManagement = function(event, memberId, name, currentRole) {
 
     let items = `<div style="padding:0.5rem 0.875rem 0.375rem;font-size:0.75rem;color:var(--text-muted);font-weight:600;">Manage: <strong style="color:var(--text-primary)">${name}</strong></div>`;
     if (currentRole !== 'Student') items += `<button class="dropdown-item" onclick="updateMemberRole('${memberId}','Student')">Make Student</button>`;
-    if (currentRole !== 'Teacher') items += `<button class="dropdown-item" onclick="updateMemberRole('${memberId}','Teacher')">Make Class Rep</button>`;
+    if (currentRole !== 'Teacher') items += `<button class="dropdown-item" onclick="updateMemberRole('${memberId}','Teacher')">Make CR</button>`;
     items += `<div class="dropdown-sep"></div><button class="dropdown-item danger" onclick="updateMemberRole('${memberId}','Owner')">Transfer Teacher Role</button>`;
 
     const menu = document.createElement('div');

@@ -184,7 +184,7 @@ async function loadClasses() {
 
 function renderClassCard(id, data, role) {
     const roleClass = role === 'Owner' ? 'role-owner' : role === 'Teacher' ? 'role-teacher' : role === 'CR' ? 'role-cr' : 'role-student';
-    const displayRole = role === 'Owner' ? 'Teacher' : role === 'CR' ? 'Class Rep' : role;
+    const displayRole = role === 'Owner' ? 'Teacher' : (role === 'CR' || role === 'Teacher') ? 'CR' : role;
     const badgeClass = role === 'Owner' ? 'badge-green' : role === 'CR' ? 'badge-warning' : role === 'Teacher' ? 'badge-blue' : 'badge-neutral';
     
     let iconSvg = '';
