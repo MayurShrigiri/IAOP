@@ -11,9 +11,17 @@ window.auth.onAuthStateChanged((user) => {
         const emailEl = document.getElementById('user-email');
         if (emailEl) emailEl.innerText = user.email;
 
-        // Set avatar initial
+        // Set avatar initial or image
         const avatarEl = document.getElementById('btn-profile-menu');
-        if (avatarEl) avatarEl.textContent = (firstName[0] || '?').toUpperCase();
+        if (avatarEl) {
+            if (user.photoURL) {
+                avatarEl.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Profile">`;
+                avatarEl.style.background = 'transparent';
+                avatarEl.style.padding = '0';
+            } else {
+                avatarEl.textContent = (firstName[0] || '?').toUpperCase();
+            }
+        }
 
         // Set greeting
         const greetEl = document.getElementById('greeting-name');
@@ -22,6 +30,29 @@ window.auth.onAuthStateChanged((user) => {
         loadClasses();
         syncUserNames();
     }
+});
+
+// Profile Picture Upload Logic
+document.getElementById('btn-change-dp')?.addEventListener('click', () => {
+    document.getElementById('user-dp-upload').click();
+    document.getElementById('profile-dropdown')?.classList.remove('active');
+});
+
+document.getElementById('user-dp-upload')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showToast('Uploading profile picture...');
+    try {
+        const ref = window.storage.ref().child(`users/${currentUser.uid}/profile_${Date.now()}`);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await currentUser.updateProfile({ photoURL: url });
+        showToast('Profile picture updated! Please refresh to see changes everywhere.');
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+        showToast('Upload failed: ' + err.message, 'error');
+    }
+    e.target.value = '';
 });
 
 document.getElementById('btn-logout-trigger')?.addEventListener('click', () => {
@@ -178,7 +209,9 @@ function renderClassCard(id, data, role) {
     const badgeClass = role === 'Owner' ? 'badge-green' : role === 'CR' ? 'badge-warning' : role === 'Teacher' ? 'badge-blue' : 'badge-neutral';
     
     let iconSvg = '';
-    if (role === 'Owner' || role === 'Teacher') {
+    if (data.logoUrl) {
+        iconSvg = `<img src="${data.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="Class Logo">`;
+    } else if (role === 'Owner' || role === 'Teacher') {
         iconSvg = `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>`;
     } else {
         iconSvg = `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`;
@@ -230,8 +263,14 @@ async function syncUserNames() {
         for (const classDoc of allClasses.docs) {
             const memberRef = window.db.doc(`classes/${classDoc.id}/members/${currentUser.uid}`);
             const memberDoc = await memberRef.get();
-            if (memberDoc.exists && !memberDoc.data().userName) {
-                batch.update(memberRef, { userName: nameToSave });
+            if (memberDoc.exists) {
+                const md = memberDoc.data();
+                if (!md.userName || md.photoURL !== currentUser.photoURL) {
+                    batch.update(memberRef, { 
+                        userName: nameToSave,
+                        photoURL: currentUser.photoURL || null
+                    });
+                }
             }
         }
         await batch.commit();

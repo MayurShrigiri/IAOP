@@ -22,6 +22,19 @@ window.auth.onAuthStateChanged(async (user) => {
     const roleEl = document.getElementById('user-role');
     if (roleEl) roleEl.textContent = getDisplayRole(userRole);
 
+    // Set avatar initial or image
+    const avatarEl = document.getElementById('btn-profile-menu');
+    if (avatarEl) {
+        if (user.photoURL) {
+            avatarEl.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Profile">`;
+            avatarEl.style.background = 'transparent';
+            avatarEl.style.padding = '0';
+        } else {
+            const firstName = (user.displayName || user.email || '?').split(' ')[0];
+            avatarEl.textContent = (firstName[0] || '?').toUpperCase();
+        }
+    }
+
     const isStaff = ['Owner', 'Teacher', 'CR'].includes(userRole);
 
     // Teacher controls bar
@@ -48,8 +61,10 @@ window.auth.onAuthStateChanged(async (user) => {
         if (el) el.style.display = 'block';
     }
     if (isStaff) {
-        const el = document.getElementById('btn-change-wallpaper');
-        if (el) el.style.display = 'block';
+        const el1 = document.getElementById('btn-change-wallpaper');
+        if (el1) el1.style.display = 'block';
+        const el2 = document.getElementById('btn-change-class-logo');
+        if (el2) el2.style.display = 'block';
     }
 
     // Pre-fill attendance date to today
@@ -83,9 +98,15 @@ async function syncUserName() {
         const nameToSave = currentUser.displayName || currentUser.email || 'Unknown';
         const ref = window.db.doc(`classes/${classId}/members/${currentUser.uid}`);
         const snap = await ref.get();
-        if (snap.exists && !snap.data().userName) {
-            await ref.update({ userName: nameToSave });
-            loadMembers();
+        if (snap.exists) {
+            const md = snap.data();
+            if (!md.userName || md.photoURL !== currentUser.photoURL) {
+                await ref.update({ 
+                    userName: nameToSave,
+                    photoURL: currentUser.photoURL || null
+                });
+                loadMembers();
+            }
         }
     } catch(e) { console.log(e); }
 }
@@ -99,6 +120,12 @@ async function loadClassDetails() {
             if (d.name)    { const el = document.getElementById('class-name');    if(el) el.textContent = d.name; }
             if (d.subject) { const el = document.getElementById('class-subject'); if(el) el.textContent = d.subject; }
             if (d.code)    { const el = document.getElementById('class-code');    if(el) el.textContent = d.code; }
+            if (d.logoUrl) {
+                const img = document.getElementById('class-logo-img');
+                const fallback = document.getElementById('class-logo-fallback');
+                if (img) { img.src = d.logoUrl; img.style.display = 'block'; }
+                if (fallback) fallback.style.display = 'none';
+            }
             if (d.wallpaperUrl) {
                 const banner = document.getElementById('classroom-banner');
                 if (banner) { banner.style.display='block'; banner.style.backgroundImage=`url('${d.wallpaperUrl}')`; }
@@ -124,6 +151,13 @@ function listenForClassUpdates() {
         const endBtn    = document.getElementById('btn-end-live');
         const isStaff   = ['Owner','Teacher','CR'].includes(userRole);
 
+        if (d.logoUrl) {
+            const img = document.getElementById('class-logo-img');
+            const fallback = document.getElementById('class-logo-fallback');
+            if (img) { img.src = d.logoUrl; img.style.display = 'block'; }
+            if (fallback) fallback.style.display = 'none';
+        }
+        
         if (d.liveClassActive) {
             if (liveCont) liveCont.style.display = 'block';
             if (isStaff) {
@@ -227,11 +261,12 @@ function renderUnifiedStream() {
 
             const edited  = d.isEdited ? `<span style="font-size:0.7rem;color:var(--text-muted)">(edited)</span>` : '';
             const initial = (d.authorName||'T')[0].toUpperCase();
+            const avatarHtml = d.authorPhoto ? `<img src="${d.authorPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="${d.authorName}">` : initial;
 
             html += `
                 <div class="feed-card" style="margin-bottom:0.875rem;">
                     <div class="feed-card-header">
-                        <div class="feed-author-avatar">${initial}</div>
+                        <div class="feed-author-avatar" style="${d.authorPhoto ? 'background:transparent;padding:0' : ''}">${avatarHtml}</div>
                         <div>
                             <div class="feed-author-name">${d.authorName} ${edited}</div>
                             <div class="feed-author-time">${date}</div>
@@ -391,6 +426,7 @@ async function loadMembers() {
             const name = d.userName || doc.id.substring(0,8)+'...';
             const role = getDisplayRole(d.role);
             const init = (name[0]||'?').toUpperCase();
+            const avatarHtml = d.photoURL ? `<img src="${d.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="${name}">` : init;
 
             const badgeColor = d.role==='Owner' ? 'badge-green' : d.role==='CR' ? 'badge-warning' : d.role==='Teacher' ? 'badge-blue' : 'badge-neutral';
 
@@ -402,7 +438,7 @@ async function loadMembers() {
             const row = `
                 <div class="member-item" ${rowAttr}>
                     <div class="member-info">
-                        <div class="member-avatar">${init}</div>
+                        <div class="member-avatar" style="${d.photoURL ? 'background:transparent;padding:0' : ''}">${avatarHtml}</div>
                         <div class="member-name">${name}</div>
                     </div>
                     <span class="badge ${badgeColor}">${role}</span>
@@ -531,6 +567,46 @@ document.getElementById('wallpaper-upload')?.addEventListener('change', async e 
     e.target.value = '';
 });
 
+/* ── Class Logo ─── */
+document.getElementById('btn-change-class-logo')?.addEventListener('click', () => {
+    document.getElementById('class-logo-upload').click();
+    document.getElementById('class-settings-dropdown')?.classList.remove('open');
+});
+document.getElementById('class-logo-upload')?.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showToast('Uploading class logo...');
+    try {
+        const ref = window.storage.ref().child(`classLogos/${classId}/${Date.now()}_${file.name}`);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await window.db.doc(`classes/${classId}`).update({ logoUrl: url });
+        showToast('Class logo updated!');
+    } catch(e) { showToast('Upload failed: '+e.message,'error'); }
+    e.target.value = '';
+});
+
+/* ── User Profile DP ─── */
+document.getElementById('btn-change-dp')?.addEventListener('click', () => {
+    document.getElementById('user-dp-upload').click();
+    document.getElementById('profile-dropdown')?.classList.remove('active');
+});
+document.getElementById('user-dp-upload')?.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showToast('Uploading profile picture...');
+    try {
+        const ref = window.storage.ref().child(`users/${currentUser.uid}/profile_${Date.now()}`);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await currentUser.updateProfile({ photoURL: url });
+        await syncUserName();
+        showToast('Profile picture updated! Please refresh to see changes everywhere.');
+        setTimeout(() => window.location.reload(), 1500);
+    } catch(err) { showToast('Upload failed: '+err.message,'error'); }
+    e.target.value = '';
+});
+
 /* ══════════════════════════════════════════════════════════════
    MODAL HELPERS
    ══════════════════════════════════════════════════════════════ */
@@ -624,12 +700,16 @@ document.getElementById('form-post-notice')?.addEventListener('submit', async e 
                 attachmentName = curNoticeFile.name;
             } catch(err) { showToast(err.message,'error'); btn.disabled=false; btn.textContent='Post'; return; }
         }
-        await window.db.collection(`classes/${classId}/notices`).add({
-            title, message, attachmentUrl, attachmentType, attachmentName,
-            authorId:   currentUser.uid,
-            authorName: currentUser.displayName || 'Teacher',
-            createdAt:  firebase.firestore.FieldValue.serverTimestamp()
-        });
+        const data = {
+            authorId: currentUser.uid,
+            authorName: currentUser.displayName || currentUser.email.split('@')[0],
+            authorPhoto: currentUser.photoURL || null,
+            title,
+            message,
+            attachmentUrl, attachmentType, attachmentName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await window.db.collection(`classes/${classId}/notices`).add(data);
         showToast('Announcement posted!');
         closeModal('modal-post-notice');
         e.target.reset(); removeNoticeAttachment();
@@ -722,7 +802,9 @@ document.getElementById('btn-start-live')?.addEventListener('click', async () =>
         b.set(nRef, {
             title: 'Live Class Started',
             message: 'Your teacher has started a live class session. Join from the alert above.',
-            authorId: currentUser.uid, authorName: currentUser.displayName||'Teacher',
+            authorId: currentUser.uid, 
+            authorName: currentUser.displayName||'Teacher',
+            authorPhoto: currentUser.photoURL || null,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await b.commit();
