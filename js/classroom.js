@@ -84,6 +84,23 @@ window.auth.onAuthStateChanged(async (user) => {
     syncUserName();
 });
 
+/* ── Profile Dropdown & Logout ─── */
+document.getElementById('btn-profile-menu')?.addEventListener('click', (e) => {
+    document.getElementById('profile-dropdown')?.classList.toggle('open');
+    e.stopPropagation();
+});
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('profile-dropdown');
+    if (dropdown && !e.target.closest('.dropdown')) dropdown.classList.remove('open');
+});
+document.getElementById('btn-logout-trigger')?.addEventListener('click', () => {
+    document.getElementById('modal-logout-confirm')?.classList.add('active');
+    document.getElementById('profile-dropdown')?.classList.remove('open');
+});
+document.getElementById('btn-confirm-logout')?.addEventListener('click', () => {
+    window.auth.signOut();
+});
+
 /* ── Role display ─── */
 function getDisplayRole(role) {
     if (role === 'Owner')   return 'Teacher';

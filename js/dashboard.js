@@ -35,7 +35,7 @@ window.auth.onAuthStateChanged((user) => {
 // Profile Picture Upload Logic
 document.getElementById('btn-change-dp')?.addEventListener('click', () => {
     document.getElementById('user-dp-upload').click();
-    document.getElementById('profile-dropdown')?.classList.remove('active');
+    document.getElementById('profile-dropdown')?.classList.remove('open');
 });
 
 document.getElementById('user-dp-upload')?.addEventListener('change', async (e) => {
@@ -242,14 +242,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnProfileMenu) {
         btnProfileMenu.addEventListener('click', (e) => {
             const dropdown = document.getElementById('profile-dropdown');
-            dropdown.classList.toggle('active');
+            dropdown.classList.toggle('open');
             e.stopPropagation();
         });
     }
 
     document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('profile-dropdown');
-        if (dropdown && !e.target.closest('.dropdown')) dropdown.classList.remove('active');
+        if (dropdown && !e.target.closest('.dropdown')) dropdown.classList.remove('open');
     });
 });
 
