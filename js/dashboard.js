@@ -47,8 +47,13 @@ document.getElementById('user-dp-upload')?.addEventListener('change', async (e) 
         await ref.put(file);
         const url = await ref.getDownloadURL();
         await currentUser.updateProfile({ photoURL: url });
-        showToast('Profile picture updated! Please refresh to see changes everywhere.');
-        setTimeout(() => window.location.reload(), 1500);
+        const avatarEl = document.getElementById('btn-profile-menu');
+        if (avatarEl) {
+            avatarEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Profile">`;
+            avatarEl.style.background = 'transparent';
+            avatarEl.style.padding = '0';
+        }
+        showToast('Profile picture updated successfully!');
     } catch (err) {
         showToast('Upload failed: ' + err.message, 'error');
     }

@@ -616,6 +616,13 @@ document.getElementById('class-logo-upload')?.addEventListener('change', async e
         await ref.put(file);
         const url = await ref.getDownloadURL();
         await window.db.doc(`classes/${classId}`).update({ logoUrl: url });
+        const fallback = document.getElementById('class-logo-fallback');
+        const img = document.getElementById('class-logo-img');
+        if (fallback && img) {
+            fallback.style.display = 'none';
+            img.src = url;
+            img.style.display = 'block';
+        }
         showToast('Class logo updated!');
     } catch(e) { showToast('Upload failed: '+e.message,'error'); }
     e.target.value = '';
@@ -636,9 +643,14 @@ document.getElementById('user-dp-upload')?.addEventListener('change', async e =>
         const url = await ref.getDownloadURL();
         await currentUser.updateProfile({ photoURL: url });
         await syncUserName();
-        showToast('Profile picture updated! Please refresh to see changes everywhere.');
-        setTimeout(() => window.location.reload(), 1500);
-    } catch(err) { showToast('Upload failed: '+err.message,'error'); }
+        const avatarEl = document.getElementById('btn-profile-menu');
+        if (avatarEl) {
+            avatarEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Profile">`;
+            avatarEl.style.background = 'transparent';
+            avatarEl.style.padding = '0';
+        }
+        showToast('Profile picture updated successfully!');
+    } catch(e) { showToast('Upload failed: '+e.message,'error'); }
     e.target.value = '';
 });
 
