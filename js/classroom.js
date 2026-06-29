@@ -21,6 +21,12 @@ window.auth.onAuthStateChanged(async (user) => {
     // Role chip in navbar
     const roleEl = document.getElementById('user-role');
     if (roleEl) roleEl.textContent = getDisplayRole(userRole);
+    
+    // Dropdown Profile info
+    const nameEl = document.getElementById('user-name');
+    const emailEl = document.getElementById('user-email');
+    if (nameEl) nameEl.textContent = user.displayName || user.email || 'User';
+    if (emailEl) emailEl.textContent = user.email || '';
 
     // Set avatar initial or image
     const avatarEl = document.getElementById('btn-profile-menu');
@@ -438,14 +444,121 @@ function listenForAssignments() {
                 streamAssignments.push({ type:'assignment', id:doc.id, data:doc.data(), timestamp: doc.data().createdAt ? doc.data().createdAt.toDate().getTime() : Date.now() });
             });
             renderUnifiedStream();
+            renderAssignmentsOnly();
         }, e => console.error(e));
+}
+
+function renderAssignmentsOnly() {
+    const list = document.getElementById('assignments-list');
+    if (!list) return;
+
+    if (streamAssignments.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                </div>
+                <h3>No assignments yet</h3>
+                <p>When a teacher posts an assignment, it will appear here</p>
+            </div>`;
+        return;
+    }
+
+    if (!window._subCache) window._subCache = {};
+
+    let html = '';
+    const now = Date.now();
+    const isStaff = ['Owner','Teacher','CR'].includes(userRole);
+
+    streamAssignments.forEach(item => {
+        const d    = item.data;
+        const date = d.createdAt ? d.createdAt.toDate().toLocaleString() : 'Just now';
+        
+        let dueDate = 'No due date';
+        let overdue = false;
+        if (d.dueDate) {
+            const dt = new Date(d.dueDate);
+            dueDate = dt.toLocaleString();
+            if (dt.getTime() < now) overdue = true;
+        }
+
+        let attach = '';
+        if (d.attachmentUrl) {
+            const an = d.attachmentName || 'Attachment';
+            attach = `<div style="margin-top:0.75rem;"><a href="${d.attachmentUrl}" target="_blank" class="attachment-link"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>${an}</a></div>`;
+        }
+
+        if (isStaff) {
+            const safeTitle = d.title.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+            html += `
+                <div class="feed-card assignment" style="margin-bottom:0.875rem;cursor:pointer;" onclick="openViewSubmissionsModal('${item.id}','${safeTitle}')">
+                    <div class="feed-card-header">
+                        <div class="feed-author-avatar assign-av">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        </div>
+                        <div>
+                            <div class="feed-author-name">Assignment</div>
+                            <div class="feed-author-time">${date}</div>
+                        </div>
+                        <span class="due-label ${overdue?'overdue':''}" style="margin-left:auto">Due: ${dueDate}</span>
+                    </div>
+                    <div class="feed-card-title">${d.title}</div>
+                    <div class="feed-card-body">${d.instructions||''}</div>
+                    ${attach}
+                    <div class="feed-card-footer">
+                        <span style="font-size:0.78rem;color:var(--text-muted)">Click to view submissions</span>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                </div>`;
+        } else {
+            const cacheKey = `sub_${item.id}_${currentUser?currentUser.uid:''}`;
+            const cached   = window._subCache[cacheKey];
+
+            let statusBadge = `<span class="status-pending"><svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>&nbsp;Pending</span>`;
+            if (cached === true) {
+                statusBadge = `<span class="status-done"><svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>&nbsp;Completed</span>`;
+            }
+
+            if (cached === undefined && currentUser) {
+                window._subCache[cacheKey] = null;
+                window.db.doc(`classes/${classId}/assignments/${item.id}/submissions/${currentUser.uid}`)
+                    .get().then(snap => {
+                        window._subCache[cacheKey] = snap.exists;
+                        renderAssignmentsOnly();
+                    }).catch(() => {});
+            }
+
+            html += `
+                <div class="feed-card assignment" style="margin-bottom:0.875rem;">
+                    <div class="feed-card-header">
+                        <div class="feed-author-avatar assign-av">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        </div>
+                        <div>
+                            <div class="feed-author-name">Assignment</div>
+                            <div class="feed-author-time">${date}</div>
+                        </div>
+                        <span class="due-label ${overdue?'overdue':''}" style="margin-left:auto">Due: ${dueDate}</span>
+                    </div>
+                    <div class="feed-card-title">${d.title}</div>
+                    <div class="feed-card-body">${d.instructions||''}</div>
+                    ${attach}
+                    <div class="feed-card-footer">
+                        <span style="font-size:0.78rem;color:var(--text-muted)">Your status</span>
+                        ${statusBadge}
+                    </div>
+                </div>`;
+        }
+    });
+
+    list.innerHTML = html;
 }
 
 /* ══════════════════════════════════════════════════════════════
    MEMBERS
    ══════════════════════════════════════════════════════════════ */
 async function loadMembers() {
-    const tabList = document.getElementById('members-list');
+    const tabList = document.getElementById('members-modal-list');
     if (!tabList) return;
 
     const setHtml = html => {
