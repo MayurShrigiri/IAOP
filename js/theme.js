@@ -15,16 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn) return;
 
     function updateUI() {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        // Support both icon-only and text variants
-        const iconEl = btn.querySelector('#theme-icon') || btn;
-        const labelEl = btn.querySelector('#theme-label');
-        if (labelEl) {
-            iconEl.textContent = isDark ? '☀️' : '🌙';
-            labelEl.textContent = isDark ? 'Light' : 'Dark';
-        } else {
-            btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark';
-        }
+        // We preserve the HTML structure with the professional SVGs.
+        // No emoji injection needed, as "Toggle Theme" text is sufficient.
     }
 
     updateUI();
