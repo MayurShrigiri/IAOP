@@ -426,12 +426,11 @@ function listenForAssignments() {
    MEMBERS
    ══════════════════════════════════════════════════════════════ */
 async function loadMembers() {
-    const tabList   = document.getElementById('members-list');
-    const modalList = document.getElementById('members-modal-list');
+    const tabList = document.getElementById('members-list');
+    if (!tabList) return;
 
     const setHtml = html => {
-        if (tabList)   tabList.innerHTML   = html;
-        if (modalList) modalList.innerHTML = html;
+        tabList.innerHTML = html;
     };
 
     try {
