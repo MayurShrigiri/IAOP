@@ -37,11 +37,11 @@ function toggleAuthMode() {
     if (loginForm.style.display === 'none') {
         loginForm.style.display = 'block';
         signupForm.style.display = 'none';
-        title.innerText = 'Welcome Back';
+        if (title) title.innerText = 'Welcome Back';
     } else {
         loginForm.style.display = 'none';
         signupForm.style.display = 'block';
-        title.innerText = 'Create Account';
+        if (title) title.innerText = 'Create Account';
     }
 }
 
