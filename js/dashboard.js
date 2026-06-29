@@ -32,33 +32,7 @@ window.auth.onAuthStateChanged((user) => {
     }
 });
 
-// Profile Picture Upload Logic
-document.getElementById('btn-change-dp')?.addEventListener('click', () => {
-    document.getElementById('user-dp-upload').click();
-    document.getElementById('profile-dropdown')?.classList.remove('open');
-});
-
-document.getElementById('user-dp-upload')?.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    showToast('Uploading profile picture...');
-    try {
-        const ref = window.storage.ref().child(`users/${currentUser.uid}/profile_${Date.now()}`);
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        await currentUser.updateProfile({ photoURL: url });
-        const avatarEl = document.getElementById('btn-profile-menu');
-        if (avatarEl) {
-            avatarEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Profile">`;
-            avatarEl.style.background = 'transparent';
-            avatarEl.style.padding = '0';
-        }
-        showToast('Profile picture updated successfully!');
-    } catch (err) {
-        showToast('Upload failed: ' + err.message, 'error');
-    }
-    e.target.value = '';
-});
+// Profile Picture Upload Logic (Removed per user request)
 
 document.getElementById('btn-logout-trigger')?.addEventListener('click', () => {
     openModal('modal-logout-confirm');

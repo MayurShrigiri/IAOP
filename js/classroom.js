@@ -581,78 +581,11 @@ document.getElementById('form-delete-class')?.addEventListener('submit', async e
     } catch(e) { showToast(e.message,'error'); closeModal('modal-delete-class'); }
 });
 
-/* ── Wallpaper ─── */
-document.getElementById('btn-change-wallpaper')?.addEventListener('click', () => {
-    document.getElementById('wallpaper-upload').click();
-    document.getElementById('class-settings-dropdown')?.classList.remove('open');
-});
-document.getElementById('wallpaper-upload')?.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    showToast('Uploading cover...');
-    try {
-        const ref = window.storage.ref().child(`wallpapers/${classId}/${Date.now()}_${file.name}`);
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        await window.db.doc(`classes/${classId}`).update({ wallpaperUrl: url });
-        const banner = document.getElementById('classroom-banner');
-        if (banner) { banner.style.display='block'; banner.style.backgroundImage=`url('${url}')`; }
-        showToast('Cover updated!');
-    } catch(e) { showToast('Upload failed: '+e.message,'error'); }
-    e.target.value = '';
-});
+/* ── Wallpaper (Removed per user request) ─── */
 
-/* ── Class Logo ─── */
-document.getElementById('btn-change-class-logo')?.addEventListener('click', () => {
-    document.getElementById('class-logo-upload').click();
-    document.getElementById('class-settings-dropdown')?.classList.remove('open');
-});
-document.getElementById('class-logo-upload')?.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    showToast('Uploading class logo...');
-    try {
-        const ref = window.storage.ref().child(`classLogos/${classId}/${Date.now()}_${file.name}`);
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        await window.db.doc(`classes/${classId}`).update({ logoUrl: url });
-        const fallback = document.getElementById('class-logo-fallback');
-        const img = document.getElementById('class-logo-img');
-        if (fallback && img) {
-            fallback.style.display = 'none';
-            img.src = url;
-            img.style.display = 'block';
-        }
-        showToast('Class logo updated!');
-    } catch(e) { showToast('Upload failed: '+e.message,'error'); }
-    e.target.value = '';
-});
+/* ── Class Logo (Removed per user request) ─── */
 
-/* ── User Profile DP ─── */
-document.getElementById('btn-change-dp')?.addEventListener('click', () => {
-    document.getElementById('user-dp-upload').click();
-    document.getElementById('profile-dropdown')?.classList.remove('open');
-});
-document.getElementById('user-dp-upload')?.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    showToast('Uploading profile picture...');
-    try {
-        const ref = window.storage.ref().child(`users/${currentUser.uid}/profile_${Date.now()}`);
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        await currentUser.updateProfile({ photoURL: url });
-        await syncUserName();
-        const avatarEl = document.getElementById('btn-profile-menu');
-        if (avatarEl) {
-            avatarEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Profile">`;
-            avatarEl.style.background = 'transparent';
-            avatarEl.style.padding = '0';
-        }
-        showToast('Profile picture updated successfully!');
-    } catch(e) { showToast('Upload failed: '+e.message,'error'); }
-    e.target.value = '';
-});
+/* ── User Profile DP (Removed per user request) ─── */
 
 /* ══════════════════════════════════════════════════════════════
    MODAL HELPERS
