@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IAOP — My Classes</title>
     <meta name="description" content="IAOP Dashboard — View and manage all your enrolled classes.">
-    <link rel="stylesheet" href="css/globals.css?v=19">
-    <link rel="stylesheet" href="css/components.css?v=19">
-    <script src="js/theme.js?v=19"></script>
+    <link rel="stylesheet" href="css/globals.css?v=20">
+    <link rel="stylesheet" href="css/components.css?v=20">
+    <script src="js/theme.js?v=20"></script>
     <style>
         .dash-page{min-height:100vh;background:var(--bg-body)}
 
@@ -38,8 +38,8 @@
     <!-- Navbar -->
     <nav class="navbar">
         <a href="dashboard.html" class="nav-brand">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <div class="nav-logo" style="background:transparent; padding:0; width:30px; height:30px;">
+                <img src="assets/logo.png" alt="Learn Logo" style="width:100%; height:100%; object-fit:cover; border-radius:6px; box-shadow:0 0 12px rgba(16,185,129,0.3);">
             </div>
             <span class="nav-brand-text">IAOP</span>
         </a>
@@ -171,9 +171,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-    <script src="js/firebase-config.js?v=19"></script>
-    <script src="js/auth.js?v=19"></script>
-    <script src="js/dashboard.js?v=19"></script>
+    <script src="js/firebase-config.js?v=20"></script>
+    <script src="js/auth.js?v=20"></script>
+    <script src="js/dashboard.js?v=20"></script>
     <script>
         document.getElementById('qa-join').addEventListener('click', () => openModal('modal-join-class'));
         document.getElementById('qa-create').addEventListener('click', () => openModal('modal-create-class'));
