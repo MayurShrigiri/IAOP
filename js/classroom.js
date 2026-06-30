@@ -28,6 +28,26 @@ window.auth.onAuthStateChanged(async (user) => {
     if (nameEl) nameEl.textContent = user.displayName || user.email || 'User';
     if (emailEl) emailEl.textContent = user.email || '';
 
+    // Fetch username from DB
+    window.db.collection('users').doc(user.uid).get().then(doc => {
+        if (doc.exists) {
+            const uData = doc.data();
+            const unEl = document.getElementById('user-username');
+            if (unEl) {
+                unEl.textContent = `@${uData.username}`;
+            } else {
+                const header = document.querySelector('.profile-header');
+                if (header) {
+                    const newEl = document.createElement('div');
+                    newEl.id = 'user-username';
+                    newEl.style.cssText = 'font-size:0.75rem;color:var(--primary);margin-top:0.25rem;font-weight:700;';
+                    newEl.textContent = `@${uData.username}`;
+                    header.appendChild(newEl);
+                }
+            }
+        }
+    });
+
     // Set avatar initial or image
     const avatarEl = document.getElementById('btn-profile-menu');
     if (avatarEl) {

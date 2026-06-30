@@ -49,12 +49,36 @@ function toggleAuthMode() {
 async function handleSignup(e) {
     e.preventDefault();
     const name = document.getElementById('signup-name').value;
+    const username = document.getElementById('signup-username').value.trim().toLowerCase();
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
     
+    if (!username || !/^[a-z0-9_]{3,15}$/.test(username)) {
+        showToast('Username must be 3-15 characters and contain only letters, numbers, and underscores.', 'error');
+        return;
+    }
+
     try {
+        // Check uniqueness
+        const usernameCheck = await window.db.collection('users').where('username', '==', username).get();
+        if (!usernameCheck.empty) {
+            showToast('Username is already taken. Please choose another.', 'error');
+            return;
+        }
+
         const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
         await userCredential.user.updateProfile({ displayName: name });
+        
+        // Save global user profile
+        await window.db.collection('users').doc(userCredential.user.uid).set({
+            uid: userCredential.user.uid,
+            displayName: name,
+            email: email,
+            username: username,
+            photoURL: null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
         showToast('Account created successfully!');
         // Redirect will be handled by onAuthStateChanged
     } catch (error) {
@@ -99,9 +123,43 @@ async function handleGoogleLogin() {
     }
 }
 
+// Sync Global User Profile (for Google Auth and existing users)
+window.syncGlobalUser = async function(user) {
+    if (!user) return;
+    try {
+        const userDoc = await window.db.collection('users').doc(user.uid).get();
+        if (!userDoc.exists) {
+            // Auto-generate username from email
+            let baseUsername = (user.email ? user.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : 'user').toLowerCase();
+            let username = baseUsername;
+            let counter = 1;
+            
+            // Ensure unique
+            while (true) {
+                const check = await window.db.collection('users').where('username', '==', username).get();
+                if (check.empty) break;
+                username = baseUsername + counter;
+                counter++;
+            }
+
+            await window.db.collection('users').doc(user.uid).set({
+                uid: user.uid,
+                displayName: user.displayName || user.email || 'User',
+                email: user.email,
+                username: username,
+                photoURL: user.photoURL || null,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    } catch(e) {
+        console.error("Failed to sync global user profile", e);
+    }
+};
+
 // Handle redirect results if user logged in via signInWithRedirect on mobile
-firebase.auth().getRedirectResult().then((result) => {
+firebase.auth().getRedirectResult().then(async (result) => {
     if (result.user) {
+        await window.syncGlobalUser(result.user);
         showToast('Logged in with Google successfully!');
     }
 }).catch((error) => {
@@ -120,8 +178,9 @@ async function handleLogout() {
 
 // Auth State Observer
 function requireAuth() {
-    window.auth.onAuthStateChanged((user) => {
+    window.auth.onAuthStateChanged(async (user) => {
         if (user) {
+            await window.syncGlobalUser(user);
             window.location.href = 'dashboard.html';
         }
     });
