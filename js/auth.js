@@ -185,3 +185,94 @@ function requireAuth() {
         }
     });
 }
+
+// Edit Profile Logic (Global)
+document.addEventListener('DOMContentLoaded', () => {
+    // Open Modal
+    const btnEditProfile = document.getElementById('btn-edit-profile-trigger');
+    if (btnEditProfile) {
+        btnEditProfile.addEventListener('click', async () => {
+            const user = window.auth.currentUser;
+            if (!user) return;
+            
+            // Populate data
+            document.getElementById('edit-profile-name').value = user.displayName || '';
+            try {
+                const docSnap = await window.db.collection('users').doc(user.uid).get();
+                if (docSnap.exists) {
+                    document.getElementById('edit-profile-username').value = docSnap.data().username || '';
+                }
+            } catch(e) {}
+            
+            // Close dropdown and open modal
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
+            
+            const modal = document.getElementById('modal-edit-profile');
+            if (modal) modal.classList.add('active');
+        });
+    }
+
+    // Submit Edit Profile Form
+    const editForm = document.getElementById('form-edit-profile');
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = window.auth.currentUser;
+            if (!user) return;
+
+            const nameInput = document.getElementById('edit-profile-name').value.trim();
+            const usernameInput = document.getElementById('edit-profile-username').value.trim().toLowerCase();
+            const btnSubmit = document.getElementById('btn-save-profile');
+
+            if (!usernameInput || !/^[a-z0-9_]{3,15}$/.test(usernameInput)) {
+                if(typeof showToast === 'function') showToast('Username must be 3-15 chars (letters, numbers, _).', 'error');
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Saving...';
+
+            try {
+                // Check if username is taken by someone else
+                const usernameCheck = await window.db.collection('users').where('username', '==', usernameInput).get();
+                let isTaken = false;
+                usernameCheck.forEach(docSnap => {
+                    if (docSnap.id !== user.uid) isTaken = true;
+                });
+
+                if (isTaken) {
+                    if(typeof showToast === 'function') showToast('Username is already taken. Please choose another.', 'error');
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = 'Save Changes';
+                    return;
+                }
+
+                // Update Auth Profile
+                await user.updateProfile({ displayName: nameInput });
+
+                // Update DB Profile
+                await window.db.collection('users').doc(user.uid).set({
+                    displayName: nameInput,
+                    username: usernameInput
+                }, { merge: true });
+
+                // Update UI visually
+                const nameEl = document.getElementById('user-name');
+                if (nameEl) nameEl.textContent = nameInput;
+                const unEl = document.getElementById('user-username');
+                if (unEl) unEl.textContent = `@${usernameInput}`;
+
+                if(typeof showToast === 'function') showToast('Profile updated successfully!');
+                
+                // Close modal
+                document.getElementById('modal-edit-profile').classList.remove('active');
+            } catch (error) {
+                if(typeof showToast === 'function') showToast(error.message, 'error');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Save Changes';
+            }
+        });
+    }
+});
