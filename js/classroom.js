@@ -599,7 +599,10 @@ async function loadMembers() {
                         <div class="member-avatar" style="${d.photoURL ? 'background:transparent;padding:0' : ''}">${avatarHtml}</div>
                         <div class="member-name">${name}</div>
                     </div>
-                    <span class="badge ${badgeColor}">${role}</span>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        ${doc.id !== currentUser.uid ? `<button class="btn btn-ghost btn-icon" onclick="event.stopPropagation(); openChatDrawer('${doc.id}', '${name.replace(/'/g,"\\\\'")}', '${d.photoURL||''}')" title="Message" style="color:var(--text-secondary);"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>` : ''}
+                        <span class="badge ${badgeColor}">${role}</span>
+                    </div>
                 </div>`;
 
             if (['Owner','Teacher','CR'].includes(d.role)) teachers.push(row);

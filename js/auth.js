@@ -81,13 +81,32 @@ async function handleLogin(e) {
 async function handleGoogleLogin() {
     try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        await window.auth.signInWithPopup(provider);
-        showToast('Logged in with Google successfully!');
-        // Redirect will be handled by onAuthStateChanged
+        
+        // Check if device is mobile or webview (where popups often fail)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // Mobile devices and WebViews block popups, use redirect
+            await window.auth.signInWithRedirect(provider);
+            // Result is handled by getRedirectResult() below
+        } else {
+            // Desktop browsers handle popups gracefully
+            await window.auth.signInWithPopup(provider);
+            showToast('Logged in with Google successfully!');
+        }
     } catch (error) {
         showToast(error.message, 'error');
     }
 }
+
+// Handle redirect results if user logged in via signInWithRedirect on mobile
+firebase.auth().getRedirectResult().then((result) => {
+    if (result.user) {
+        showToast('Logged in with Google successfully!');
+    }
+}).catch((error) => {
+    console.error("Redirect error", error);
+});
 
 // Logout handler
 async function handleLogout() {
