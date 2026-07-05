@@ -61,7 +61,7 @@
         }
         .msg-item{
             display:flex;
-            align-items:center;
+            align-items:flex-start;
             gap:0.75rem;
             padding:1rem 1.25rem;
             border-bottom:1px solid var(--border);
@@ -81,21 +81,24 @@
             color:#fff;
             font-weight:700;
             overflow:hidden;
+            flex-shrink:0;
+            margin-top:2px;
         }
-        .msg-info{flex-grow:1;overflow:hidden;}
+        .msg-info{flex-grow:1;overflow:hidden;display:flex;flex-direction:column;justify-content:center;min-height:44px;}
         .msg-name{font-weight:700;font-size:0.95rem;color:var(--text-primary);margin-bottom:0.125rem;}
         .msg-preview{font-size:0.8rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .msg-username{font-size:0.75rem;color:var(--text-muted);}
 
         /* Main Chat Area */
         .chat-header{
-            padding:1.25rem;
+            padding:1rem 1.25rem;
             background:var(--bg-surface);
             border-bottom:1px solid var(--border);
             display:flex;
             align-items:center;
             gap:0.75rem;
         }
+        .chat-header .msg-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .chat-messages{
             flex-grow:1;
             padding:1.5rem;
@@ -120,7 +123,7 @@
         }
         
         /* Media & Call Styles */
-        .chat-header-actions { display:flex; gap:0.5rem; }
+        .chat-header-actions { display:flex; gap:0.25rem; flex-shrink:0; }
         .chat-media-preview { max-width: 250px; border-radius: 8px; margin-top: 0.5rem; cursor: pointer; border: 1px solid var(--border); }
         .chat-file-link { display:flex; align-items:center; gap:0.5rem; padding:0.75rem; background:var(--bg-body); border-radius:8px; text-decoration:none; color:var(--text-primary); margin-top:0.5rem; border:1px solid var(--border); transition: background var(--dur-fast); }
         .chat-file-link:hover { background:var(--bg-surface-hover); }
@@ -222,7 +225,7 @@
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                     </button>
                     <div id="active-chat-avatar" class="msg-avatar" style="width:36px;height:36px;font-size:0.9rem;"></div>
-                    <div style="flex-grow:1;">
+                    <div style="flex-grow:1; min-width:0;">
                         <div id="active-chat-name" class="msg-name" style="margin:0;"></div>
                         <div id="active-chat-username" class="msg-username"></div>
                     </div>
