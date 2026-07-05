@@ -90,7 +90,7 @@ select.input{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmln
 
 .nav-spacer{flex:1}
 
-.nav-actions{display:flex;align-items:center;gap:0.5rem}
+.nav-actions, .nav-right{display:flex;align-items:center;gap:0.5rem}
 
 /* Avatar */
 .avatar{
