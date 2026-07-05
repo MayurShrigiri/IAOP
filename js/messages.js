@@ -8,7 +8,18 @@ let recentChatsUnsubscribe = null;
 let activeChatId = null;
 let activeRecipientId = null;
 let globalUsersCache = {}; // UID -> User Profile
+let selectedFile = null;
 
+// WebRTC Globals
+let localStream = null;
+let peerConnection = null;
+let currentCallUnsubscribe = null;
+let activeCallChatId = null;
+const servers = {
+    iceServers: [
+        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
+    ]
+};
 window.auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = 'index.html';
@@ -228,9 +239,20 @@ function loadMessages() {
                     timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 }
 
+                let contentHtml = data.text || '';
+                
+                if (data.type === 'image' && data.fileUrl) {
+                    contentHtml += `${data.text ? '<br>' : ''}<img src="${data.fileUrl}" class="chat-media-preview" onclick="window.open('${data.fileUrl}', '_blank')">`;
+                } else if (data.type === 'file' && data.fileUrl) {
+                    contentHtml += `${data.text ? '<br>' : ''}<a href="${data.fileUrl}" target="_blank" class="chat-file-link">
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.fileName || 'Download File'}</div>
+                    </a>`;
+                }
+
                 html += `
                     <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
-                        ${data.text}
+                        ${contentHtml}
                         <div style="font-size:0.65rem;opacity:0.7;text-align:${isSent?'right':'left'};margin-top:0.25rem;">${timeStr}</div>
                     </div>
                 `;
@@ -241,32 +263,313 @@ function loadMessages() {
         });
 }
 
-/* ── SEND MESSAGE ─── */
-document.getElementById('chat-form').addEventListener('submit', async (e) => {
+/* ── SEND MESSAGE & FILE ─── */
+document.getElementById('chat-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!activeChatId || !currentUser) return;
 
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    if (!text) return;
+    if (!text && !selectedFile) return;
 
-    input.value = '';
+    document.getElementById('btn-send-msg').disabled = true;
 
     try {
+        let fileUrl = null;
+        let fileName = null;
+        let msgType = 'text';
+
+        if (selectedFile) {
+            msgType = selectedFile.type.startsWith('image/') ? 'image' : 'file';
+            fileName = selectedFile.name;
+            const fileRef = window.storage.ref(`chat_attachments/${activeChatId}/${Date.now()}_${fileName}`);
+            const snapshot = await fileRef.put(selectedFile);
+            fileUrl = await snapshot.ref.getDownloadURL();
+        }
+
         await window.db.collection('chats').doc(activeChatId).collection('messages').add({
             text: text,
+            type: msgType,
+            fileUrl: fileUrl,
+            fileName: fileName,
             senderId: currentUser.uid,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
         await window.db.collection('chats').doc(activeChatId).set({
-            lastMessage: text,
+            lastMessage: msgType === 'text' ? text : `Sent a ${msgType}`,
             lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
             users: [currentUser.uid, activeRecipientId]
         }, { merge: true });
 
+        // Reset
+        input.value = '';
+        selectedFile = null;
+        document.getElementById('chat-file-input').value = '';
+        document.getElementById('file-upload-preview').style.display = 'none';
+
     } catch (error) {
         console.error("Error sending message:", error);
         showToast("Failed to send message", "error");
+    } finally {
+        document.getElementById('btn-send-msg').disabled = false;
     }
 });
+
+/* ── FILE INPUT HANDLERS ─── */
+document.getElementById('btn-attach-file')?.addEventListener('click', () => {
+    document.getElementById('chat-file-input').click();
+});
+document.getElementById('chat-file-input')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        selectedFile = file;
+        document.getElementById('file-upload-name').textContent = file.name;
+        document.getElementById('file-upload-preview').style.display = 'block';
+        document.getElementById('btn-send-msg').disabled = false;
+    }
+});
+document.getElementById('btn-clear-file')?.addEventListener('click', () => {
+    selectedFile = null;
+    document.getElementById('chat-file-input').value = '';
+    document.getElementById('file-upload-preview').style.display = 'none';
+    if (!document.getElementById('chat-input').value.trim()) {
+        document.getElementById('btn-send-msg').disabled = true;
+    }
+});
+document.getElementById('chat-input')?.addEventListener('input', (e) => {
+    const hasText = e.target.value.trim().length > 0;
+    document.getElementById('btn-send-msg').disabled = !(hasText || selectedFile);
+});
+
+/* ── WEBRTC CALLING LOGIC ─── */
+const callModal = document.getElementById('call-modal');
+const localVideo = document.getElementById('local-video');
+const remoteVideo = document.getElementById('remote-video');
+
+document.getElementById('btn-start-video-call')?.addEventListener('click', () => startCall(true));
+document.getElementById('btn-start-voice-call')?.addEventListener('click', () => startCall(false));
+document.getElementById('btn-end-call')?.addEventListener('click', endCall);
+document.getElementById('btn-reject-call')?.addEventListener('click', endCall);
+
+document.getElementById('btn-toggle-audio')?.addEventListener('click', () => {
+    if(!localStream) return;
+    const track = localStream.getAudioTracks()[0];
+    if(track) {
+        track.enabled = !track.enabled;
+        document.getElementById('btn-toggle-audio').style.background = track.enabled ? 'rgba(255,255,255,0.2)' : 'var(--danger)';
+    }
+});
+document.getElementById('btn-toggle-video')?.addEventListener('click', () => {
+    if(!localStream) return;
+    const track = localStream.getVideoTracks()[0];
+    if(track) {
+        track.enabled = !track.enabled;
+        document.getElementById('btn-toggle-video').style.background = track.enabled ? 'rgba(255,255,255,0.2)' : 'var(--danger)';
+    }
+});
+
+async function setupMediaSources(videoEnabled = true) {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: videoEnabled, audio: true });
+        localVideo.srcObject = localStream;
+        return true;
+    } catch (e) {
+        console.error("Media access denied", e);
+        showToast("Camera/Microphone access required", "error");
+        return false;
+    }
+}
+
+async function startCall(videoEnabled) {
+    if (!activeChatId) return;
+    activeCallChatId = activeChatId;
+    const mediaReady = await setupMediaSources(videoEnabled);
+    if (!mediaReady) return;
+
+    callModal.classList.add('active');
+    document.getElementById('call-controls-incoming').style.display = 'none';
+    document.getElementById('call-controls-active').style.display = 'flex';
+    document.getElementById('call-status-text').textContent = "Calling...";
+
+    const callDoc = window.db.collection('chats').doc(activeCallChatId).collection('call').doc('current');
+    
+    // Clear old data if any
+    await callDoc.delete().catch(()=> {});
+
+    peerConnection = new RTCPeerConnection(servers);
+    
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    const remoteStream = new MediaStream();
+    remoteVideo.srcObject = remoteStream;
+
+    peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach(track => {
+            remoteStream.addTrack(track);
+        });
+        document.getElementById('call-status-text').textContent = "In Call";
+    };
+
+    const callerCandidates = callDoc.collection('callerCandidates');
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            callerCandidates.add(event.candidate.toJSON());
+        }
+    };
+
+    const offerDescription = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offerDescription);
+
+    const offer = {
+        sdp: offerDescription.sdp,
+        type: offerDescription.type,
+    };
+
+    await callDoc.set({ offer, callerId: currentUser.uid });
+
+    currentCallUnsubscribe = callDoc.onSnapshot(snapshot => {
+        const data = snapshot.data();
+        if (!peerConnection?.currentRemoteDescription && data?.answer) {
+            const answerDescription = new RTCSessionDescription(data.answer);
+            peerConnection.setRemoteDescription(answerDescription);
+        }
+    });
+
+    callDoc.collection('calleeCandidates').onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                let data = change.doc.data();
+                if(peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(data));
+            }
+        });
+    });
+}
+
+// Global listener for incoming calls
+const activeCallListeners = {};
+window.auth.onAuthStateChanged(user => {
+    if (user) {
+        window.db.collection('chats').where('users', 'array-contains', user.uid).onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                const chatId = change.doc.id;
+                listenForIncomingCall(chatId);
+            });
+        });
+    }
+});
+
+function listenForIncomingCall(chatId) {
+    if (activeCallListeners[chatId]) return;
+    
+    activeCallListeners[chatId] = window.db.collection('chats').doc(chatId).collection('call').doc('current').onSnapshot(async (snapshot) => {
+        const data = snapshot.data();
+        if (!data) {
+            // Call ended
+            if (callModal?.classList.contains('active') && activeCallChatId === chatId) {
+                endCallUI();
+            }
+            return;
+        }
+
+        if (data.offer && data.callerId !== currentUser.uid && !peerConnection) {
+            activeCallChatId = chatId;
+            callModal.classList.add('active');
+            document.getElementById('call-controls-active').style.display = 'none';
+            document.getElementById('call-controls-incoming').style.display = 'flex';
+            document.getElementById('call-status-text').textContent = "Incoming Call...";
+            
+            const acceptBtn = document.getElementById('btn-accept-call');
+            acceptBtn.onclick = async () => {
+                await answerCall(chatId, data.offer);
+            };
+        }
+    });
+}
+
+async function answerCall(chatId, offerData) {
+    const mediaReady = await setupMediaSources(true);
+    if (!mediaReady) return;
+
+    document.getElementById('call-controls-incoming').style.display = 'none';
+    document.getElementById('call-controls-active').style.display = 'flex';
+    document.getElementById('call-status-text').textContent = "Connecting...";
+
+    peerConnection = new RTCPeerConnection(servers);
+    
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    const remoteStream = new MediaStream();
+    remoteVideo.srcObject = remoteStream;
+
+    peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach(track => {
+            remoteStream.addTrack(track);
+        });
+        document.getElementById('call-status-text').textContent = "In Call";
+    };
+
+    const callDoc = window.db.collection('chats').doc(chatId).collection('call').doc('current');
+    const calleeCandidates = callDoc.collection('calleeCandidates');
+
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            calleeCandidates.add(event.candidate.toJSON());
+        }
+    };
+
+    const offerDescription = new RTCSessionDescription(offerData);
+    await peerConnection.setRemoteDescription(offerDescription);
+
+    const answerDescription = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answerDescription);
+
+    const answer = {
+        sdp: answerDescription.sdp,
+        type: answerDescription.type,
+    };
+
+    await callDoc.update({ answer });
+
+    callDoc.collection('callerCandidates').onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                let data = change.doc.data();
+                if(peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(data));
+            }
+        });
+    });
+}
+
+function endCall() {
+    if (activeCallChatId) {
+        window.db.collection('chats').doc(activeCallChatId).collection('call').doc('current').delete().catch(()=>{});
+    }
+    endCallUI();
+}
+
+function endCallUI() {
+    if(callModal) callModal.classList.remove('active');
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+    if (currentCallUnsubscribe) {
+        currentCallUnsubscribe();
+        currentCallUnsubscribe = null;
+    }
+    if(localVideo) localVideo.srcObject = null;
+    if(remoteVideo) remoteVideo.srcObject = null;
+    const statusText = document.getElementById('call-status-text');
+    if(statusText) statusText.textContent = "";
+    activeCallChatId = null;
+}
+
