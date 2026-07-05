@@ -11,6 +11,9 @@ let globalUsersCache = {}; // UID -> User Profile
 let selectedFile = null;
 
 // WebRTC Globals
+const ringtone = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
+ringtone.loop = true;
+
 let localStream = null;
 let peerConnection = null;
 let currentCallUnsubscribe = null;
@@ -481,8 +484,12 @@ function listenForIncomingCall(chatId) {
             document.getElementById('call-controls-incoming').style.display = 'flex';
             document.getElementById('call-status-text').textContent = "Incoming Call...";
             
+            try { ringtone.play().catch(()=>{}); } catch(e){}
+            
             const acceptBtn = document.getElementById('btn-accept-call');
             acceptBtn.onclick = async () => {
+                ringtone.pause();
+                ringtone.currentTime = 0;
                 await answerCall(chatId, data.offer);
             };
         }
@@ -553,6 +560,11 @@ function endCall() {
 }
 
 function endCallUI() {
+    try {
+        ringtone.pause();
+        ringtone.currentTime = 0;
+    } catch(e){}
+    
     if(callModal) callModal.classList.remove('active');
     if (peerConnection) {
         peerConnection.close();

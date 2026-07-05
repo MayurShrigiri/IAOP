@@ -17,6 +17,7 @@
             margin:0 auto;
             width:100%;
             height:calc(100vh - 64px); /* subtract navbar */
+            position:relative;
         }
         .msg-sidebar{
             width:320px;
@@ -129,12 +130,12 @@
         .chat-file-link:hover { background:var(--bg-surface-hover); }
         
         /* Call Modal Overlay */
-        #call-modal { display:none; flex-direction:column; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; backdrop-filter:blur(8px); }
+        #call-modal { display:none; flex-direction:column; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100vh; height:100dvh; background:rgba(0,0,0,0.85); z-index:9999; backdrop-filter:blur(8px); }
         #call-modal.active { display:flex; }
         .call-videos { position:relative; width:100%; max-width:800px; height:60vh; background:#000; border-radius:16px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
         #remote-video { width:100%; height:100%; object-fit:cover; }
         #local-video { position:absolute; bottom:1rem; right:1rem; width:120px; height:160px; object-fit:cover; border-radius:12px; border:2px solid rgba(255,255,255,0.2); background:#333; z-index:10; }
-        .call-controls { display:flex; gap:1.5rem; margin-top:2rem; }
+        .call-controls { display:flex; gap:1.5rem; margin-top:2rem; flex-wrap:wrap; justify-content:center; padding:0 1rem; }
         .btn-call-action { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; font-size:1.5rem; transition:transform var(--dur-fast), background var(--dur-fast); }
         .btn-call-action:hover { transform:scale(1.05); }
         .btn-call-end { background:var(--danger); color:#fff; }
