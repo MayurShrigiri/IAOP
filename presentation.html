@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAOP - Project Presentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .presentation {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease-in-out;
+            transform: scale(0.95);
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .slide-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 4rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #34d399, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: var(--primary);
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        ul {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        li {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            position: relative;
+            color: var(--text);
+        }
+
+        li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 3rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .slide-indicator {
+            position: absolute;
+            bottom: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        /* Slide specific styles */
+        .title-slide {
+            text-align: center;
+        }
+        .title-slide .slide-content {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+        .title-slide h1 {
+            font-size: 5rem;
+        }
+        .title-slide p {
+            font-size: 1.5rem;
+        }
+
+        /* Decorative Background */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .shape1 {
+            width: 500px;
+            height: 500px;
+            background: var(--primary-dark);
+            top: -200px;
+            left: -100px;
+        }
+        .shape2 {
+            width: 400px;
+            height: 400px;
+            background: #3b82f6;
+            bottom: -100px;
+            right: -100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progress"></div>
+    
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2"></div>
+
+    <div class="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide">
+            <div class="slide-content">
+                <h1>IAOP</h1>
+                <p>Intelligent Academic Operations Platform</p>
+                <p style="color: var(--primary); margin-top: 1rem; font-weight: 600;">Project Demo & Step-by-Step Guide</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Project Overview -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>1. Project Demo: What I Have Built</h2>
+                <p>IAOP is a centralized academic management system designed to bring classrooms, communication, and operations into one connected experience.</p>
+                <ul>
+                    <li><strong>Authentication:</strong> Secure Sign In, Google OAuth, and Sign Up flows using Firebase Auth.</li>
+                    <li><strong>Dashboard ("My Classes"):</strong> A dynamic portal for users to view enrolled classes, join a class via 6-digit code, or create new classes.</li>
+                    <li><strong>Communication:</strong> Dedicated sections for messages and updates, keeping noise low and context high.</li>
+                    <li><strong>Modern UI/UX:</strong> Implemented light/dark theme toggling, fluid glassmorphic UI, and responsive layouts.</li>
+                </ul>
+                <div class="slide-indicator">Slide 2 / 6</div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Tech Stack -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>2. The Technology Stack</h2>
+                <p>A lightweight, powerful, and scalable architecture.</p>
+                <ul>
+                    <li><strong>Frontend Structure:</strong> HTML5 with semantic tags for accessibility.</li>
+                    <li><strong>Styling:</strong> Vanilla CSS with custom properties (CSS Variables) for global theming, responsive grids, and micro-animations.</li>
+                    <li><strong>Logic:</strong> Vanilla JavaScript for DOM manipulation and theme management.</li>
+                    <li><strong>Backend & Database:</strong> Firebase Ecosystem (Auth for users, Firestore for NoSQL real-time database, Storage for files).</li>
+                </ul>
+                <div class="slide-indicator">Slide 3 / 6</div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Step-by-Step Guide (Part 1) -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>3. How to Make a Website Like IAOP</h2>
+                <h3>Step 1: Planning & UI Design</h3>
+                <ul>
+                    <li>Define your color palette and typography (e.g., Inter font, Green/Blue gradient).</li>
+                    <li>Set up a global CSS file (`globals.css`) using CSS Variables to easily handle Dark/Light themes.</li>
+                </ul>
+                <h3>Step 2: Frontend Setup (HTML & CSS)</h3>
+                <ul>
+                    <li>Create modular CSS files (`components.css`) for reusable UI elements like buttons, inputs, and cards.</li>
+                    <li>Build the UI components first: Navbar, Hero sections, and Modals (using `display: flex` and `grid`).</li>
+                </ul>
+                <div class="slide-indicator">Slide 4 / 6</div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Step-by-Step Guide (Part 2) -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>3. How to Make a Website Like IAOP (Cont.)</h2>
+                <h3>Step 3: Backend Integration (Firebase)</h3>
+                <ul>
+                    <li>Create a project on Firebase Console and enable Authentication & Firestore.</li>
+                    <li>Include Firebase SDK scripts in your HTML.</li>
+                    <li>Initialize Firebase config in a `firebase-config.js` file.</li>
+                </ul>
+                <h3>Step 4: Implementing Core Features</h3>
+                <ul>
+                    <li>Write JavaScript logic to handle form submissions (Login/Signup).</li>
+                    <li>Use Firestore APIs (`db.collection('classes').add(...)`) to create and fetch data dynamically in the Dashboard.</li>
+                </ul>
+                <div class="slide-indicator">Slide 5 / 6</div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Summary & Best Practices -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>4. Polish & Best Practices</h2>
+                <p>To achieve a professional grade finish like IAOP:</p>
+                <ul>
+                    <li><strong>Security:</strong> Write proper Firestore Security Rules (`firestore.rules`) to ensure users can only access their own classes.</li>
+                    <li><strong>UX Details:</strong> Add SVG icons, hover effects, and loading states to buttons to provide immediate feedback to the user.</li>
+                    <li><strong>Responsiveness:</strong> Use media queries (`@media`) and `clamp()` in CSS to ensure the UI looks great on phones, tablets, and desktop monitors.</li>
+                </ul>
+                <div class="slide-indicator">Slide 6 / 6</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="prevSlide()">← Prev</button>
+        <button onclick="nextSlide()">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                if(index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            
+            // Update progress bar
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = progress + '%';
+        }
+
+        function nextSlide() {
+            if(currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if(currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+            if(e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAOP | Your class in your hands</title>
+    <meta name="description" content="IAOP brings your classroom, communication, and academic operations together.">
+    <link rel="stylesheet" href="css/globals.css?v=19">
+    <link rel="stylesheet" href="css/components.css?v=19">
+    <style>
+        :root {
+            --poster-blue: #2f64a5;
+            --poster-ink: #183e70;
+            --poster-sky: #e8f2fb;
+            --poster-paper: #fffdf3;
+            --poster-yellow: #f5c84b;
+        }
+
+        body { background: #d8e7f4; }
+        .brochure { width: min(100%, 1200px); margin: 2rem auto; color: var(--poster-ink); }
+        .brochure-side { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 760px; background: var(--poster-sky); box-shadow: 0 20px 60px rgba(24, 62, 112, .18); }
+        .brochure-panel { display: flex; flex-direction: column; position: relative; overflow: hidden; padding: clamp(1.5rem, 3.5vw, 3.5rem); border-right: 1px dashed rgba(47, 100, 165, .3); }
+        .brochure-panel:last-child { border-right: 0; }
+        .brochure-panel::before { content: ""; position: absolute; z-index: 0; width: 270px; height: 270px; border-radius: 50%; background: #c8dff1; filter: blur(24px); opacity: .7; pointer-events: none; }
+        .brochure-panel > * { position: relative; z-index: 1; }
+        .brochure-cover { display: flex; flex-direction: column; justify-content: space-between; background: var(--poster-ink); color: #fff; }
+        .brochure-cover::before { top: -100px; right: -100px; background: #3e7fbe; }
+        .brochure-cover h1 { color: #fff; font-size: clamp(2.7rem, 4.8vw, 4.6rem); font-weight: 900; letter-spacing: -.055em; line-height: .86; }
+        .brochure-cover h1 span { display: block; color: #9fc6e7; }
+        .brochure-cover p { max-width: 250px; color: #d6e8f7; line-height: 1.5; }
+        .brochure-logo-wrap { width: 170px; padding: .8rem; position: relative; overflow: hidden; background: rgba(255, 253, 243, .92); }
+        .brochure-logo-wrap::before { content: ""; position: absolute; inset: -24px; background: #d9e8f3; filter: blur(22px); }
+        .brochure-logo { position: relative; width: 100%; mix-blend-mode: multiply; }
+        .brochure-kicker { margin-bottom: 1rem; font-size: .7rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--poster-blue); }
+        .brochure-panel h2 { margin-bottom: 1rem; color: var(--poster-blue); font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1; }
+        .brochure-panel h3 { margin: 1.5rem 0 .4rem; color: var(--poster-blue); font-size: 1rem; }
+        .brochure-panel p { color: #456584; font-size: .9rem; line-height: 1.55; }
+        .brochure-audience { display: grid; gap: .7rem; margin-top: 2rem; }
+        .brochure-audience div { padding: .8rem; background: rgba(255, 253, 243, .72); border-left: 3px solid var(--poster-blue); }
+        .brochure-audience strong { display: block; margin-bottom: .2rem; color: var(--poster-ink); font-size: .82rem; }
+        .brochure-audience span { color: #456584; font-size: .78rem; line-height: 1.4; }
+        .brochure-back .brochure-audience { gap: .5rem; margin-top: 1.25rem; }
+        .brochure-back .brochure-audience div { padding: .6rem .8rem; }
+        .brochure-back .brochure-cta { margin-top: 1.25rem; }
+        .brochure-panel-fill { display: grid; gap: .65rem; margin-top: auto; padding-top: 2rem; }
+        .brochure-panel-fill div { padding: .8rem 0; border-top: 1px solid rgba(47, 100, 165, .22); }
+        .brochure-panel-fill strong { display: block; color: var(--poster-blue); font-size: .82rem; }
+        .brochure-panel-fill span { display: block; margin-top: .15rem; color: #456584; font-size: .76rem; line-height: 1.4; }
+        .brochure-number { margin-bottom: 1.5rem; color: var(--poster-yellow); font-size: 2rem; font-weight: 900; line-height: 1; }
+        .brochure-list { display: grid; gap: 1rem; margin-top: 2rem; list-style: none; }
+        .brochure-list li { padding-left: 1rem; border-left: 4px solid var(--poster-yellow); color: #31557e; font-size: .9rem; }
+        .brochure-back { background: #f7fbfe; }
+        .brochure-back::before { bottom: 40px; left: -130px; }
+        .brochure-cta { display: inline-block; margin-top: 2rem; padding: .8rem 1rem; color: #fff; background: var(--poster-blue); font-weight: 800; }
+        .brochure-contact { position: absolute; bottom: 3rem; left: clamp(1.5rem, 3.5vw, 3.5rem); right: clamp(1.5rem, 3.5vw, 3.5rem); padding-top: 1rem; border-top: 2px solid rgba(47, 100, 165, .3); }
+        .brochure-contact strong { color: var(--poster-ink); }
+        .brochure-cover .brochure-contact { border-color: rgba(255,255,255,.3); }
+        .brochure-cover .brochure-contact strong { display: block; color: #fff; font-size: clamp(.65rem, 1.1vw, .82rem); letter-spacing: .08em; white-space: nowrap; }
+        .brochure-cover .brochure-contact p { color: #b9d5ec; }
+        .brochure-cover > div:nth-child(2) { padding-bottom: 4.5rem; }
+        .brochure-cover > div:nth-child(2) > p:last-child { max-width: 230px; margin-top: 1.25rem !important; font-size: .8rem; }
+        @media (max-width: 760px) {
+            .brochure { margin: 0; }
+            .brochure-side { display: block; min-height: 0; box-shadow: none; }
+            .brochure-panel { min-height: 560px; border-right: 0; border-bottom: 1px dashed rgba(47, 100, 165, .3); }
+            .brochure-panel:last-child { border-bottom: 0; }
+        }
+        @media print {
+            @page { size: A4 landscape; margin: 0; }
+            html, body { width: 297mm; min-height: 420mm; margin: 0; background: #fff; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .brochure { width: 297mm; margin: 0; }
+            .brochure-side { display: grid; width: 297mm; height: 210mm; min-height: 210mm; overflow: hidden; box-shadow: none; page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
+            .brochure-panel { padding: 16mm; }
+            .brochure-contact { left: 16mm; right: 16mm; bottom: 14mm; }
+            .brochure-side + .brochure-side { page-break-before: always; break-before: page; }
+            .brochure-side:last-child { page-break-after: auto; break-after: auto; }
+            .print-action { display: none !important; }
+        }
+        .print-action { display: block; width: fit-content; margin: 1rem auto 0; padding: .7rem 1rem; border: 0; border-radius: 4px; color: #fff; background: var(--poster-blue); font: 700 .8rem var(--font); cursor: pointer; }
+    </style>
+</head>
+<body>
+    <main class="brochure" aria-label="IAOP tri-fold brochure">
+        <section class="brochure-side" aria-label="Outside panels">
+            <article class="brochure-panel brochure-back"><p class="brochure-kicker">Stay connected</p><h2>Learning works better together.</h2><p>IAOP gives academic communities one focused place to organize work, communicate clearly, and keep momentum visible.</p><div class="brochure-audience"><div><strong>For students</strong><span>Know what is due, what is next, and where to find support.</span></div><div><strong>For teachers</strong><span>Spend less time coordinating and more time supporting learning.</span></div></div><a class="brochure-cta" href="index.html">Explore IAOP</a><div class="brochure-contact"><strong>IAOP</strong><p>Intelligent Academic Operations Platform</p></div></article>
+            <article class="brochure-panel"><p class="brochure-kicker">Everything in one place</p><h2>Less chasing.<br>More teaching.</h2><ul class="brochure-list"><li>Organize classes and assignments.</li><li>Keep messages and updates together.</li><li>Follow attendance and activity.</li></ul><h3>One calmer workflow</h3><p>Bring the everyday details of academic life into one shared rhythm.</p><div class="brochure-panel-fill"><div><strong>Plan</strong><span>Turn daily tasks into a clear path forward.</span></div><div><strong>Connect</strong><span>Keep the right people close to the work.</span></div></div></article>
+            <article class="brochure-panel brochure-cover"><div class="brochure-logo-wrap"><img class="brochure-logo" src="https://drive.google.com/thumbnail?id=1jwC1illmoaBxc6pLlnfIFnnFRxaPkDWL&sz=w800" alt="IAOP logo"></div><div><p class="brochure-kicker" style="color:#9fc6e7">One connected classroom</p><h1>Your class <span>in your hands.</span></h1><p style="margin-top:1.5rem">Plan lessons, stay connected, and keep every academic detail moving forward with IAOP.</p></div><div class="brochure-contact"><strong>Learn · Organize · Connect</strong></div></article>
+        </section>
+        <section class="brochure-side" aria-label="Inside panels">
+            <article class="brochure-panel"><div class="brochure-number">01</div><p class="brochure-kicker">Classroom</p><h2>Bring the classroom into focus.</h2><p>Keep classes, assignments, and daily academic work in one clear place. IAOP helps every task find its owner and every update find its audience.</p><div class="brochure-panel-fill"><div><strong>Clear by design</strong><span>Simple spaces for the work that matters, without the noise.</span></div><div><strong>Ready when you are</strong><span>Open the day with a shared view of what needs attention.</span></div></div></article>
+            <article class="brochure-panel"><div class="brochure-number">02</div><p class="brochure-kicker">Communication</p><h2>Make every message count.</h2><p>Connect students, teachers, and teams through timely, focused communication that keeps everyone moving in the same direction.</p><div class="brochure-panel-fill"><div><strong>Stay in the loop</strong><span>Important conversations and updates stay close to the work.</span></div><div><strong>Less noise</strong><span>Give every message a clear place and purpose.</span></div></div></article>
+            <article class="brochure-panel"><div class="brochure-number">03</div><p class="brochure-kicker">Progress</p><h2>See the next step.</h2><p>Attendance, activity, and academic updates come together so progress is easier to understand and easier to act on.</p><div class="brochure-panel-fill"><div><strong>Built for better learning</strong><span>Turn scattered academic operations into a connected experience.</span></div><div><strong>Move forward</strong><span>Use a clearer picture to make the next decision.</span></div></div></article>
+        </section>
+    </main>
+    <button class="print-action" type="button" onclick="window.print()">Download / Print PDF</button>
+</body>
+</html>

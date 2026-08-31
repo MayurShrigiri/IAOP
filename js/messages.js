@@ -406,13 +406,10 @@ async function startCall(videoEnabled) {
         peerConnection.addTrack(track, localStream);
     });
 
-    const remoteStream = new MediaStream();
-    remoteVideo.srcObject = remoteStream;
-
     peerConnection.ontrack = (event) => {
-        event.streams[0].getTracks().forEach(track => {
-            remoteStream.addTrack(track);
-        });
+        if (event.streams && event.streams[0]) {
+            remoteVideo.srcObject = event.streams[0];
+        }
         document.getElementById('call-status-text').textContent = "In Call";
     };
 
@@ -435,19 +432,20 @@ async function startCall(videoEnabled) {
 
     currentCallUnsubscribe = callDoc.onSnapshot(snapshot => {
         const data = snapshot.data();
-        if (!peerConnection?.currentRemoteDescription && data?.answer) {
+        if (peerConnection && !peerConnection.currentRemoteDescription && data?.answer) {
             const answerDescription = new RTCSessionDescription(data.answer);
-            peerConnection.setRemoteDescription(answerDescription);
+            peerConnection.setRemoteDescription(answerDescription).then(() => {
+                // Safely listen for callee candidates only after remote description is set
+                callDoc.collection('calleeCandidates').onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            let candidateData = change.doc.data();
+                            if(peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(candidateData)).catch(e => console.error("Error adding candidate", e));
+                        }
+                    });
+                });
+            }).catch(e => console.error("Error setting remote description", e));
         }
-    });
-
-    callDoc.collection('calleeCandidates').onSnapshot(snapshot => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === 'added') {
-                let data = change.doc.data();
-                if(peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(data));
-            }
-        });
     });
 }
 
@@ -510,13 +508,10 @@ async function answerCall(chatId, offerData) {
         peerConnection.addTrack(track, localStream);
     });
 
-    const remoteStream = new MediaStream();
-    remoteVideo.srcObject = remoteStream;
-
     peerConnection.ontrack = (event) => {
-        event.streams[0].getTracks().forEach(track => {
-            remoteStream.addTrack(track);
-        });
+        if (event.streams && event.streams[0]) {
+            remoteVideo.srcObject = event.streams[0];
+        }
         document.getElementById('call-status-text').textContent = "In Call";
     };
 
